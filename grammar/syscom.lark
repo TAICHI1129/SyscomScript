@@ -12,25 +12,13 @@ block: "{" stmt* "}"
 
 stmt: assign
     | print_stmt
-    | if_stmt
-    | while_stmt
-    | return_stmt
 
 assign: NAME "=" expr
 print_stmt: "print" "(" expr ")"
 
-if_stmt: "if" "(" expr ")" block ("else" block)?
-while_stmt: "while" "(" expr ")" block
-return_stmt: "return" expr?
-
 ?expr: STRING
      | NUMBER
      | NAME
-     | expr "<" expr   -> lt
-     | expr ">" expr   -> gt
-     | expr "==" expr  -> eq
-     | expr "+" expr   -> add
-     | expr "-" expr   -> sub
 
 %import common.CNAME -> NAME
 %import common.NUMBER
