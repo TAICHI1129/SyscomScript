@@ -2,19 +2,18 @@ from lark import Tree, Token
 
 def to_python(tree: Tree) -> str:
     lines = []
-    lines.append("class Main:")
-    lines.append("    def run(self):")
-
     indent = "    "
+    lines.append("class Main:")
+    lines.append(f"{indent}def run(self):")
 
-    def walk(node, level=1):
+    def walk(node, level=2):
         pad = indent * level
 
         if isinstance(node, Tree):
             # print文
             if node.data == "print_stmt":
                 expr = node.children[0]
-                lines.append(pad + "print(" + expr_to_py(expr) + ")")
+                lines.append(f"{pad}print({expr_to_py(expr)})")
 
             # 代入文
             elif node.data == "assign":
@@ -48,14 +47,16 @@ def to_python(tree: Tree) -> str:
                 else:
                     lines.append(f"{pad}return")
 
-            # 子ノードを再帰
+            # ブロック・メソッド・クラスは再帰
             for c in node.children:
-                walk(c, level)
+                if isinstance(c, Tree) and c.data in ["class_def", "method_def", "block"]:
+                    walk(c, level)
 
     walk(tree)
 
+    # run が空なら pass を入れる
     if len(lines) == 2:
-        lines.append(indent + "    pass")
+        lines.append(indent*2 + "pass")
 
     return "\n".join(lines)
 
