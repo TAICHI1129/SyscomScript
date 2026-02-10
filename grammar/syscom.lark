@@ -1,0 +1,27 @@
+?start: program
+
+program: class_def+
+
+class_def: "class" NAME "{" class_body "}"
+
+class_body: method_def+
+
+method_def: NAME "(" ")" block
+
+block: "{" stmt* "}"
+
+stmt: assign
+    | print_stmt
+
+assign: NAME "=" expr
+print_stmt: "print" "(" expr ")"
+
+?expr: STRING
+     | NUMBER
+     | NAME
+
+%import common.CNAME -> NAME
+%import common.NUMBER
+%import common.ESCAPED_STRING -> STRING
+%import common.WS
+%ignore WS

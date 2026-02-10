@@ -1,0 +1,5 @@
+class Main {
+    run() {
+        print("SyscomScript v0.1 running")
+    }
+}
