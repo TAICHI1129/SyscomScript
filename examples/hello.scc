@@ -1,5 +1,15 @@
 class Main {
     run() {
-        print("SyscomScript v0.1 running")
+        x = 0
+        while x < 3 {
+            print("x = " + x)
+            x = x + 1
+        }
+        if x == 3 {
+            print("done")
+        } else {
+            print("not done")
+        }
+        return x
     }
 }
