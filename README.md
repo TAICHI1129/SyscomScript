@@ -1,6 +1,6 @@
 # SyscomScript
 
-SyscomScript is an experimental programming language designed to let users write code, run it instantly, and publish it with a minimal integrated toolchain.
+SyscomScript is a programming language designed to let users write code, run it instantly, and publish it with a minimal integrated toolchain.
 
 ## Features
 - Simple class-based syntax
@@ -10,7 +10,7 @@ SyscomScript is an experimental programming language designed to let users write
 
 ## Example
 
-```scc
+```scs
 class Main {
     run() {
         print("Hello")
