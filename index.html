@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SyscomScript v0.2</title>
+<style>
+    body { font-family: Arial, sans-serif; margin: 40px; background-color: #f5f5f5; }
+    h1 { color: #333; }
+    pre { background: #222; color: #0f0; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    button { padding: 10px 20px; margin-top: 10px; cursor: pointer; }
+    #output { margin-top: 20px; padding: 15px; background: #fff; border-radius: 5px; min-height: 50px; }
+</style>
+</head>
+<body>
+
+<h1>SyscomScript v0.2</h1>
+<p>SyscomScript is a toy programming language made by Taichi, now supporting <strong>if</strong>, <strong>while</strong>, and <strong>return</strong> statements.</p>
+
+<h2>Sample Code</h2>
+<pre id="code">
+class Main {
+    print("SyscomScript v0.2 running")
+    if (1) {
+        print("Condition true")
+    }
+}
+</pre>
+
+<button onclick="runSample()">Run Sample</button>
+
+<h2>Output</h2>
+<div id="output"></div>
+
+<script>
+// Simulated SyscomScript runtime
+function runSample() {
+    const output = document.getElementById("output");
+    output.innerHTML = ""; // clear previous
+
+    const code = document.getElementById("code").innerText;
+
+    // Very simple simulation: only prints
+    const lines = code.split("\n");
+    lines.forEach(line => {
+        line = line.trim();
+        if (line.startsWith("print(")) {
+            const text = line.match(/print\("(.+)"\)/);
+            if (text) output.innerHTML += text[1] + "<br>";
+        }
+    });
+}
+</script>
+
+</body>
+</html>
