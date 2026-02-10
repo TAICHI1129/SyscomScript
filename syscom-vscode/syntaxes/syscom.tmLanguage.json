@@ -1,0 +1,23 @@
+{
+  "scopeName": "source.syscom",
+  "name": "SyscomScript",
+  "patterns": [
+    {
+      "name": "keyword.control.syscom",
+      "match": "\\b(class|if|else|while|return|print)\\b"
+    },
+    {
+      "name": "constant.numeric.syscom",
+      "match": "\\b\\d+\\b"
+    },
+    {
+      "name": "string.quoted.double.syscom",
+      "begin": "\"",
+      "end": "\""
+    },
+    {
+      "name": "variable.other.syscom",
+      "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
+    }
+  ]
+}
