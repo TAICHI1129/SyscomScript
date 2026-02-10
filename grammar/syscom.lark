@@ -3,18 +3,23 @@
 program: class_def+
 
 class_def: "class" NAME "{" class_body "}"
-
 class_body: method_def+
 
 method_def: NAME "(" ")" block
 
 block: "{" stmt* "}"
 
-stmt: assign
-    | print_stmt
+?stmt: assign
+     | print_stmt
+     | if_stmt
+     | while_stmt
+     | return_stmt
 
 assign: NAME "=" expr
 print_stmt: "print" "(" expr ")"
+if_stmt: "if" "(" expr ")" block ("else" block)?
+while_stmt: "while" "(" expr ")" block
+return_stmt: "return" expr?
 
 ?expr: STRING
      | NUMBER
