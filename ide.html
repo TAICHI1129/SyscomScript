@@ -1,49 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Syscom IDE</title>
-    <style>
-        html, body { margin: 0; height: 100%; overflow: hidden; }
-        #editor { width: 100%; height: 70%; }
-        #output { width: 100%; height: 30%; background: #1e1e1e; color: #fff; padding: 10px; overflow-y: auto; font-family: monospace; }
-        button { position: absolute; top: 10px; right: 10px; z-index: 10; }
-    </style>
-    <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs/editor/editor.main.css">
+<meta charset="UTF-8">
+<title>Syscom IDE</title>
+<style>
+  body, html { margin: 0; padding: 0; height: 100%; display: flex; flex-direction: column; }
+  #editor { height: 70%; }
+  #output { height: 30%; background: #1e1e1e; color: #fff; padding: 10px; overflow-y: auto; font-family: monospace; }
+  button { margin: 5px; }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/loader.min.js"></script>
 </head>
 <body>
-    <button id="runBtn">Run</button>
-    <div id="editor"></div>
-    <div id="output"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs/loader.js"></script>
-    <script>
-        require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs' }});
-        require(['vs/editor/editor.main'], function() {
-            const editor = monaco.editor.create(document.getElementById('editor'), {
-                value: 'class Main {\n    def run(self):\n        print("Hello")\n}',
-                language: 'python',
-                theme: 'vs-dark',
-                automaticLayout: true
-            });
+<div id="editor"></div>
+<button id="run">Run</button>
+<label><input type="checkbox" id="debug"> Show Python</label>
+<div id="output"></div>
 
-            const output = document.getElementById('output');
-            document.getElementById('runBtn').addEventListener('click', async () => {
-                const code = editor.getValue();
-                output.textContent = "Running...\n";
-                try {
-                    const res = await fetch('/run', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ code, debug: true })
-                    });
-                    const data = await res.json();
-                    output.textContent = data.output;
-                } catch(err) {
-                    output.textContent = "Error: " + err;
-                }
-            });
-        });
-    </script>
+<script>
+require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs' }});
+require(['vs/editor/editor.main'], function() {
+    window.editor = monaco.editor.create(document.getElementById('editor'), {
+        value: "class Main {\n    def run() {\n        print(\"Hello\")\n    }\n}",
+        language: "python",
+        theme: "vs-dark",
+        automaticLayout: true
+    });
+});
+
+document.getElementById("run").addEventListener("click", async () => {
+    const code = editor.getValue();
+    const debug = document.getElementById("debug").checked;
+
+    const res = await fetch("/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, debug })
+    });
+
+    const data = await res.json();
+    document.getElementById("output").textContent = data.output;
+});
+</script>
+
 </body>
 </html>

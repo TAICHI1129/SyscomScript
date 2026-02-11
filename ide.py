@@ -1,35 +1,36 @@
+from flask import Flask, request, jsonify, send_from_directory
+import io
+from compiler.parser import parse
+from compiler.transformer import to_python
+from runtime.bootstrap import run_main
 
-### ide.py（最小構成・動く）
-import tkinter as tk
-import subprocess
-import tempfile
-import os
+app = Flask(__name__, static_folder=".")
 
+# IDEを開くためのルート
+@app.route("/")
+def index():
+    return send_from_directory(".", "ide.html")
+
+# Syscomコードを実行するAPI
+@app.route("/run", methods=["POST"])
 def run_code():
-    code = text.get("1.0", tk.END)
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".scc", mode="w", encoding="utf-8") as f:
-        f.write(code)
-        path = f.name
+    data = request.get_json()
+    code = data.get("code", "")
+    debug = data.get("debug", False)
 
-    result = subprocess.run(
-        ["python", "syscom.py", path],
-        capture_output=True,
-        text=True
-    )
+    f = io.StringIO()
+    try:
+        tree = parse(code)
+        py_code = to_python(tree)
+        if debug:
+            f.write("=== Generated Python ===\n")
+            f.write(py_code + "\n")
+            f.write("========================\n")
+        run_main(py_code)
+    except Exception as e:
+        f.write(str(e))
 
-    output.delete("1.0", tk.END)
-    output.insert(tk.END, result.stdout + result.stderr)
+    return jsonify(output=f.getvalue())
 
-root = tk.Tk()
-root.title("SyscomScript IDE")
-
-text = tk.Text(root, height=15)
-text.pack(fill="both", expand=True)
-
-btn = tk.Button(root, text="Run", command=run_code)
-btn.pack()
-
-output = tk.Text(root, height=10, bg="#111", fg="#0f0")
-output.pack(fill="both", expand=True)
-
-root.mainloop()
+if __name__ == "__main__":
+    app.run(port=8000)
