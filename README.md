@@ -34,6 +34,7 @@ class Main {
 
 ➁ Run "python ide.py" in the command prompt.
 
+If you add "--debug-python" to the command, the Python code will be displayed (example: python syscom.py examples/hello.scs --debug-python)
 
 ## How to execute
 
