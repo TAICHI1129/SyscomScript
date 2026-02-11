@@ -29,4 +29,4 @@ class Main {
 
 ➀ Move to the syscom folder in the command prompt.
 
-➁ Run "python syscom.py code\(file-name).scs" in the command prompt.
+➁ Run "python syscom.py code\\(file-name).scs" in the command prompt.
