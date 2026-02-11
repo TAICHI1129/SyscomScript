@@ -1,5 +1,5 @@
 use tower_lsp::{LspService, Server};
-use toyst::lsp::ToystLanguageServer;
+use syscom::lsp::ToystLanguageServer;
 
 #[tokio::main]
 async fn main() {
