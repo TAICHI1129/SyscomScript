@@ -47,6 +47,20 @@ def to_python(tree: Tree) -> str:
                 else:
                     lines.append(f"{pad}return")
 
+            # 関数定義
+            elif node.data == "function_def":
+                func_name = node.children[0]
+                args_node = node.children[1]
+                args = [str(a) for a in args_node.children] if args_node.children else []
+                lines.append(f"{pad}def {func_name}({', '.join(args)}):")
+                walk(node.children[2], level + 1)  # block
+
+            # 関数呼び出し
+            elif node.data == "function_call":
+                func_name = node.children[0]
+                args = [expr_to_py(c) for c in node.children[1:]]
+                lines.append(f"{pad}{func_name}({', '.join(args)})")
+
             # 子ノードを再帰処理
             for c in node.children:
                 if isinstance(c, Tree):
@@ -67,7 +81,6 @@ def expr_to_py(expr):
             return str(expr)
         return str(expr)
     elif isinstance(expr, Tree):
-        # 演算子ノードを処理
         if expr.data == "add":
             return f"({expr_to_py(expr.children[0])} + {expr_to_py(expr.children[1])})"
         elif expr.data == "sub":
