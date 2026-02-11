@@ -1,44 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Syscom IDE</title>
-<style>
-  #editor { width: 100%; height: 400px; border: 1px solid #ccc; }
-  #output { width: 100%; height: 200px; border: 1px solid #ccc; margin-top: 10px; white-space: pre; overflow: auto; }
-</style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.47.0/min/vs/loader.min.js"></script>
+    <meta charset="UTF-8">
+    <title>Syscom IDE</title>
+    <style>
+        html, body { margin: 0; height: 100%; overflow: hidden; }
+        #editor { width: 100%; height: 70%; }
+        #output { width: 100%; height: 30%; background: #1e1e1e; color: #fff; padding: 10px; overflow-y: auto; font-family: monospace; }
+        button { position: absolute; top: 10px; right: 10px; z-index: 10; }
+    </style>
+    <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs/editor/editor.main.css">
 </head>
 <body>
-<h1>Syscom IDE</h1>
-<div id="editor"></div>
-<button id="run">Run</button>
-<button id="debug">Debug</button>
-<pre id="output"></pre>
+    <button id="runBtn">Run</button>
+    <div id="editor"></div>
+    <div id="output"></div>
 
-<script>
-require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.47.0/min/vs' }});
-require(['vs/editor/editor.main'], function() {
-  window.editor = monaco.editor.create(document.getElementById('editor'), {
-    value: 'class Main {\n    def run() {\n        print("Hello")\n    }\n}',
-    language: 'python',
-    theme: 'vs-dark',
-  });
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs/loader.js"></script>
+    <script>
+        require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs' }});
+        require(['vs/editor/editor.main'], function() {
+            const editor = monaco.editor.create(document.getElementById('editor'), {
+                value: 'class Main {\n    def run(self):\n        print("Hello")\n}',
+                language: 'python',
+                theme: 'vs-dark',
+                automaticLayout: true
+            });
 
-  async function sendCode(debug=false) {
-    const code = editor.getValue();
-    const res = await fetch('/run', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, debug })
-    });
-    const result = await res.json();
-    document.getElementById('output').textContent = result.output;
-  }
-
-  document.getElementById('run').onclick = () => sendCode(false);
-  document.getElementById('debug').onclick = () => sendCode(true);
-});
-</script>
+            const output = document.getElementById('output');
+            document.getElementById('runBtn').addEventListener('click', async () => {
+                const code = editor.getValue();
+                output.textContent = "Running...\n";
+                try {
+                    const res = await fetch('/run', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ code, debug: true })
+                    });
+                    const data = await res.json();
+                    output.textContent = data.output;
+                } catch(err) {
+                    output.textContent = "Error: " + err;
+                }
+            });
+        });
+    </script>
 </body>
 </html>
