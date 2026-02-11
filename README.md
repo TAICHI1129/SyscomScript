@@ -16,6 +16,7 @@ class Main {
         print("Hello")
     }
 }
+```
 
 ## How to use IDE
 
