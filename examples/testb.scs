@@ -1,0 +1,17 @@
+class Main {
+    run() {
+        x = 5
+        y = 7
+        sum_result = add(x, y)
+        print(sum_result)
+        print_msg("finished")
+    }
+
+    func add(a, b) {
+        return a + b
+    }
+
+    func print_msg(msg) {
+        print(msg)
+    }
+}

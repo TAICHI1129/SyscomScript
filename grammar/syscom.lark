@@ -4,10 +4,12 @@ program: class_def+
 
 class_def: "class" NAME "{" class_body "}"
 
-class_body: method_def+ | function_def+
+class_body: method_def+ | func_def*
 
 method_def: NAME "(" ")" block
-function_def: "func" NAME "(" (NAME ("," NAME)*)? ")" block
+
+func_def: "func" NAME "(" [param_list] ")" block
+param_list: NAME ("," NAME)*
 
 block: "{" stmt* "}"
 
@@ -16,18 +18,23 @@ stmt: assign
     | if_stmt
     | while_stmt
     | return_stmt
-    | function_call
+    | func_call_stmt
 
 assign: NAME "=" expr
 print_stmt: "print" "(" expr ")"
+
 if_stmt: "if" "(" expr ")" block ("else" block)?
 while_stmt: "while" "(" expr ")" block
 return_stmt: "return" expr?
-function_call: NAME "(" (expr ("," expr)*)? ")"
+
+func_call_stmt: func_call
+func_call: NAME "(" [arg_list] ")"
+arg_list: expr ("," expr)*
 
 ?expr: STRING
      | NUMBER
      | NAME
+     | func_call
      | expr "<" expr   -> lt
      | expr ">" expr   -> gt
      | expr "==" expr  -> eq

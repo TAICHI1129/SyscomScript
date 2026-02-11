@@ -27,7 +27,7 @@ def to_python(tree: Tree) -> str:
                 then_block = node.children[1]
                 lines.append(f"{pad}if {expr_to_py(cond)}:")
                 walk(then_block, level + 1)
-                if len(node.children) == 3:  # elseあり
+                if len(node.children) == 3:
                     else_block = node.children[2]
                     lines.append(f"{pad}else:")
                     walk(else_block, level + 1)
@@ -48,18 +48,19 @@ def to_python(tree: Tree) -> str:
                     lines.append(f"{pad}return")
 
             # 関数定義
-            elif node.data == "function_def":
-                func_name = node.children[0]
-                args_node = node.children[1]
-                args = [str(a) for a in args_node.children] if args_node.children else []
-                lines.append(f"{pad}def {func_name}({', '.join(args)}):")
-                walk(node.children[2], level + 1)  # block
+            elif node.data == "func_def":
+                name = node.children[0]
+                param_node = node.children[1] if len(node.children) > 2 else None
+                params = []
+                if param_node:
+                    params = [str(p) for p in param_node.children]
+                body = node.children[-1]
+                lines.append(f"{pad}def {name}({', '.join(params)}):")
+                walk(body, level + 1)
 
             # 関数呼び出し
-            elif node.data == "function_call":
-                func_name = node.children[0]
-                args = [expr_to_py(c) for c in node.children[1:]]
-                lines.append(f"{pad}{func_name}({', '.join(args)})")
+            elif node.data == "func_call_stmt":
+                lines.append(f"{pad}{expr_to_py(node.children[0])}")
 
             # 子ノードを再帰処理
             for c in node.children:
@@ -68,7 +69,6 @@ def to_python(tree: Tree) -> str:
 
     walk(tree)
 
-    # run が空なら pass を入れる
     if len(lines) == 2:
         lines.append(indent*2 + "pass")
 
@@ -91,6 +91,13 @@ def expr_to_py(expr):
             return f"({expr_to_py(expr.children[0])} > {expr_to_py(expr.children[1])})"
         elif expr.data == "eq":
             return f"({expr_to_py(expr.children[0])} == {expr_to_py(expr.children[1])})"
+        elif expr.data == "func_call":
+            func_name = expr.children[0]
+            args = []
+            if len(expr.children) > 1:
+                args_node = expr.children[1]
+                args = [expr_to_py(a) for a in args_node.children]
+            return f"{func_name}({', '.join(args)})"
         else:
             raise TypeError(f"Unsupported expr node: {expr}")
     else:
