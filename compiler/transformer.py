@@ -177,6 +177,15 @@ def expr_to_py(expr) -> str:
             args = [expr_to_py(a) for a in expr.children[2].children]
         return f"{module}.{func}({', '.join(args)})"
 
+    # obj.method(args) → variable.method(args)
+    if expr.data == "obj_call":
+        obj    = str(expr.children[0])
+        method = str(expr.children[1])
+        args   = []
+        if len(expr.children) > 2:
+            args = [expr_to_py(a) for a in expr.children[2].children]
+        return f"{obj}.{method}({', '.join(args)})"
+
     # 負数リテラル: -7 → (-7)
     if expr.data == "neg":
         return f"(-{str(expr.children[0])})"

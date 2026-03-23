@@ -40,23 +40,24 @@ arg_list:  expr ("," expr)*
      | NAME
      | func_call
      | list_expr
-     | expr "[" expr "]"              -> index_expr
-     | "py" "." NAME "." NAME "(" [arg_list] ")"  -> py_call
-     | "-" NUMBER                     -> neg
-     | "not" expr                     -> not_expr
-     | expr "*"  expr                 -> mul
-     | expr "/"  expr                 -> div
-     | expr "%"  expr                 -> mod
-     | expr "+"  expr                 -> add
-     | expr "-"  expr                 -> sub
-     | expr "<"  expr                 -> lt
-     | expr ">"  expr                 -> gt
-     | expr "<=" expr                 -> lte
-     | expr ">=" expr                 -> gte
-     | expr "==" expr                 -> eq
-     | expr "!=" expr                 -> ne
-     | expr "and" expr                -> and_expr
-     | expr "or"  expr                -> or_expr
+     | expr "[" expr "]"                           -> index_expr
+     | "py" "." NAME "." NAME "(" [arg_list] ")"   -> py_call
+     | NAME "." NAME "(" [arg_list] ")"             -> obj_call
+     | "-" NUMBER                                   -> neg
+     | "not" expr                                   -> not_expr
+     | expr "*"  expr                               -> mul
+     | expr "/"  expr                               -> div
+     | expr "%"  expr                               -> mod
+     | expr "+"  expr                               -> add
+     | expr "-"  expr                               -> sub
+     | expr "<"  expr                               -> lt
+     | expr ">"  expr                               -> gt
+     | expr "<=" expr                               -> lte
+     | expr ">=" expr                               -> gte
+     | expr "==" expr                               -> eq
+     | expr "!=" expr                               -> ne
+     | expr "and" expr                              -> and_expr
+     | expr "or"  expr                              -> or_expr
 
 list_expr: "[" [list_items] "]"
 list_items: expr ("," expr)*
