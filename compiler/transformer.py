@@ -159,4 +159,17 @@ def expr_to_py(expr) -> str:
             args = [expr_to_py(a) for a in expr.children[1].children]
         return f"self.{func_name}({', '.join(args)})"
 
+    # リストリテラル: [1, 2, 3]
+    if expr.data == "list_expr":
+        if not expr.children:
+            return "[]"
+        items = [expr_to_py(item) for item in expr.children[0].children]
+        return f"[{', '.join(items)}]"
+
+    # インデックスアクセス: x[i]
+    if expr.data == "index_expr":
+        target = expr_to_py(expr.children[0])
+        index  = expr_to_py(expr.children[1])
+        return f"{target}[{index}]"
+
     raise TypeError(f"Unsupported expr node: {expr.data}")

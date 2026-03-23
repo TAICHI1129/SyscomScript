@@ -38,6 +38,8 @@ arg_list:  expr ("," expr)*
      | NUMBER
      | NAME
      | func_call
+     | list_expr
+     | expr "[" expr "]"   -> index_expr
      | "not" expr          -> not_expr
      | expr "+"  expr      -> add
      | expr "-"  expr      -> sub
@@ -49,6 +51,9 @@ arg_list:  expr ("," expr)*
      | expr "!=" expr      -> ne
      | expr "and" expr     -> and_expr
      | expr "or"  expr     -> or_expr
+
+list_expr: "[" [list_items] "]"
+list_items: expr ("," expr)*
 
 %import common.CNAME          -> NAME
 %import common.NUMBER
