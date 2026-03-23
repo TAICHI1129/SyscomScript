@@ -24,55 +24,60 @@ impl SyscomLanguageServer {
         let output = Command::new("python")
             .arg("syscom.py")
             .arg(&tmp)
-            .arg("--debug-python")
             .output();
 
-        match output {
-            Ok(o) if !o.status.success() => {
-                // stdout に SyscomError メッセージが出る
-                let msg = String::from_utf8_lossy(&o.stdout).to_string()
-                    + &String::from_utf8_lossy(&o.stderr);
-                let msg = msg.trim().to_string();
+        let o = match output {
+            Ok(o) => o,
+            Err(_) => return vec![],
+        };
 
-                // "SyscomError at line N, column M: ..." をパースして正確な位置に波線を出す
-                let (line, col) = parse_error_position(&msg);
-
-                let diag = Diagnostic {
-                    range: Range {
-                        start: Position { line, character: col },
-                        end:   Position { line, character: col + 1 },
-                    },
-                    severity: Some(DiagnosticSeverity::ERROR),
-                    message: msg,
-                    source: Some("SyscomScript".to_string()),
-                    ..Default::default()
-                };
-                vec![diag]
-            }
-            _ => vec![],
+        // FIX: syscom.py は SyscomError 時に sys.exit(1) するので
+        //      exit code で判定できる（以前は常に 0 だったため波線が出なかった）
+        if o.status.success() {
+            return vec![];
         }
+
+        let msg = String::from_utf8_lossy(&o.stdout).to_string()
+            + &String::from_utf8_lossy(&o.stderr);
+        let msg = msg.trim().to_string();
+
+        if msg.is_empty() {
+            return vec![];
+        }
+
+        // "SyscomError at line N, column M: ..." を正確な行・列に変換
+        let (line, col) = parse_error_position(&msg);
+
+        let diag = Diagnostic {
+            range: Range {
+                start: Position { line, character: col },
+                end:   Position { line, character: col + 1 },
+            },
+            severity: Some(DiagnosticSeverity::ERROR),
+            message: msg,
+            source: Some("SyscomScript".to_string()),
+            ..Default::default()
+        };
+        vec![diag]
     }
 }
 
-/// "SyscomError at line N, column M: ..." から (line-1, col-1) を返す
-/// パース失敗時は (0, 0)
+/// "SyscomError at line N, column M: ..." から (line-1, col-1) を返す（LSP は 0-based）
 fn parse_error_position(msg: &str) -> (u32, u32) {
-    // "at line N" を探す
     let line = msg
         .split("at line ")
         .nth(1)
         .and_then(|s| s.split([',', ':']).next())
         .and_then(|s| s.trim().parse::<u32>().ok())
-        .map(|n| n.saturating_sub(1))   // LSP は 0-based
+        .map(|n| n.saturating_sub(1))
         .unwrap_or(0);
 
-    // "column M" を探す
     let col = msg
         .split("column ")
         .nth(1)
         .and_then(|s| s.split([',', ':']).next())
         .and_then(|s| s.trim().parse::<u32>().ok())
-        .map(|n| n.saturating_sub(1))   // LSP は 0-based
+        .map(|n| n.saturating_sub(1))
         .unwrap_or(0);
 
     (line, col)

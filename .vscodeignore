@@ -6,6 +6,7 @@ code/**
 grammar/**
 compiler/**
 runtime/**
+node_modules/**
 *.py
 *.bat
 *.lark
