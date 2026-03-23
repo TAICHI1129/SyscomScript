@@ -8,8 +8,8 @@ SyscomScript is a class-based, educational programming language that transpiles 
 - Transpiles to Python and runs immediately
 - REPL (interactive mode) for quick experimentation
 - Web-based IDE (`ide.py`)
-- Import Python standard libraries (`import math`)
-- Import other `.scs` files (`import "utils.scs"`)
+- Import Python standard libraries (`import math`) and call them via `py.module.func()`
+- Import other `.scs` files (`import "utils.scs"`) and call methods via `obj.method()`
 - `--debug-python` flag to inspect generated Python code
 
 ## Requirements
@@ -123,18 +123,34 @@ class Main {
         y = 3
         print(x + y)
         print(x - y)
+        print(x * y)
+        print(x / y)
+        print(x % y)
     }
 }
 ```
 
-### If / Else
+### Negative numbers
+
+```scs
+class Main {
+    run() {
+        x = -5
+        print(x)
+    }
+}
+```
+
+### If / Else if / Else
 
 ```scs
 class Main {
     run() {
         x = 5
-        if (x > 3) {
+        if (x > 10) {
             print("big")
+        } else if (x > 3) {
+            print("medium")
         } else {
             print("small")
         }
@@ -175,7 +191,6 @@ class Main {
     run() {
         nums = [10, 20, 30]
         print(nums[0])
-        print(nums[2])
 
         for i in range(3) {
             print(nums[i])
@@ -220,19 +235,37 @@ class Main {
 
 ### Import a Python standard library
 
+Use `import` to load a Python module, then call its functions with `py.module.func(args)`.
+
 ```scs
 import math
 
 class Main {
     run() {
-        print("imported math")
+        x = py.math.sqrt(16)
+        print(x)
+
+        y = py.math.floor(3.7)
+        print(y)
     }
 }
 ```
 
 ### Import another `.scs` file
 
+Define classes in a separate `.scs` file, import it, and call methods with `obj.method(args)`.
+
 ```scs
+// mathlib.scs
+class MathLib {
+    func square(n) {
+        return n * n
+    }
+}
+```
+
+```scs
+// main.scs
 import "mathlib.scs"
 
 class Main {
