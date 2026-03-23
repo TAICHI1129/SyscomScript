@@ -131,7 +131,15 @@ def walk_stmt(node: Tree, lines: list, indent: str, level: int):
             lines.append(f"{pad}return")
 
     elif node.data == "func_call_stmt":
-        lines.append(f"{pad}self.{expr_to_py(node.children[0])}")
+        # FIX: expr_to_py(func_call) は既に "self.foo(...)" を返すので
+        #      ここで self. を付け直すと "self.self.foo(...)" になってしまう。
+        #      func_call ノードを直接展開して self. を一度だけ付ける。
+        fc = node.children[0]  # func_call ノード
+        func_name = str(fc.children[0])
+        args = []
+        if len(fc.children) > 1 and isinstance(fc.children[1], Tree):
+            args = [expr_to_py(a) for a in fc.children[1].children]
+        lines.append(f"{pad}self.{func_name}({', '.join(args)})")
 
     else:
         for c in node.children:
@@ -169,12 +177,11 @@ def expr_to_py(expr) -> str:
         return f"({left} {op} {right})"
 
     # py.path.to.func(args) → path.to.func(args)
-    # py_call の子[0]は py_path ノード（NAME の列）、子[1]は arg_list（あれば）
     if expr.data == "py_call":
-        py_path_node = expr.children[0]                          # py_path ノード
-        dotted = ".".join(str(t) for t in py_path_node.children) # "os.path.join" など
+        py_path_node = expr.children[0]
+        dotted = ".".join(str(t) for t in py_path_node.children)
         args = []
-        if len(expr.children) > 1:
+        if len(expr.children) > 1 and isinstance(expr.children[1], Tree):
             args = [expr_to_py(a) for a in expr.children[1].children]
         return f"{dotted}({', '.join(args)})"
 
@@ -183,7 +190,7 @@ def expr_to_py(expr) -> str:
         obj    = str(expr.children[0])
         method = str(expr.children[1])
         args   = []
-        if len(expr.children) > 2:
+        if len(expr.children) > 2 and isinstance(expr.children[2], Tree):
             args = [expr_to_py(a) for a in expr.children[2].children]
         return f"{obj}.{method}({', '.join(args)})"
 
@@ -194,10 +201,11 @@ def expr_to_py(expr) -> str:
     if expr.data == "not_expr":
         return f"(not {expr_to_py(expr.children[0])})"
 
+    # 式中の関数呼び出し（右辺値）: foo(args) → self.foo(args)
     if expr.data == "func_call":
-        func_name = expr.children[0]
+        func_name = str(expr.children[0])
         args = []
-        if len(expr.children) > 1:
+        if len(expr.children) > 1 and isinstance(expr.children[1], Tree):
             args = [expr_to_py(a) for a in expr.children[1].children]
         return f"self.{func_name}({', '.join(args)})"
 
