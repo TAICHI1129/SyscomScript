@@ -26,6 +26,30 @@ pip install lark
 
 ## How to Run a File
 
+**Option 1 — Double-click `run.bat`**
+
+Place your `.scs` file in the `code\` folder, then double-click `run.bat`. Available files are listed automatically — just type the file name and press Enter.
+
+```
+================================
+   SyscomScript Runner
+================================
+
+Available files in code\:
+
+  [1] hello.scs
+  [2] myprogram.scs
+
+Enter file name (e.g. hello.scs): hello.scs
+
+Running code\hello.scs ...
+--------------------------------
+Hello
+--------------------------------
+```
+
+**Option 2 — Command line**
+
 ```bat
 python syscom.py code\(file-name).scs
 ```
@@ -121,6 +145,37 @@ class Main {
 }
 ```
 
+### For loop
+
+```scs
+class Main {
+    run() {
+        for i in range(5) {
+            print(i)
+        }
+    }
+}
+```
+
+### Operators
+
+```scs
+class Main {
+    run() {
+        x = 5
+        if (x >= 3 and x <= 10) {
+            print("in range")
+        }
+        if (x != 0) {
+            print("not zero")
+        }
+        if (not x == 0) {
+            print("also not zero")
+        }
+    }
+}
+```
+
 ### Functions
 
 ```scs
@@ -166,6 +221,7 @@ class Main {
 ```
 SyscomScript/
 ├── syscom.py              # Entry point
+├── run.bat                # Double-click runner
 ├── repl.py                # Interactive REPL
 ├── ide.py                 # IDE launcher
 ├── grammar/
