@@ -1,5 +1,4 @@
 // src/lsp.rs — SyscomScript Language Server 実装
-// (旧 syscom.rs をここに移動)
 
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::*;
@@ -16,8 +15,7 @@ impl SyscomLanguageServer {
     }
 
     /// Python で syscom パーサを呼び、エラーがあれば Diagnostics として返す
-    async fn check_scs_file(&self, uri: &Url, text: &str) -> Vec<Diagnostic> {
-        // 一時ファイルに書き出して syscom.py --debug-python で構文チェック
+    async fn check_scs_file(&self, _uri: &Url, text: &str) -> Vec<Diagnostic> {
         let tmp = std::env::temp_dir().join("_syscom_lsp_check.scs");
         if std::fs::write(&tmp, text).is_err() {
             return vec![];
@@ -31,17 +29,21 @@ impl SyscomLanguageServer {
 
         match output {
             Ok(o) if !o.status.success() => {
-                let stderr = String::from_utf8_lossy(&o.stdout).to_string()
+                // stdout に SyscomError メッセージが出る
+                let msg = String::from_utf8_lossy(&o.stdout).to_string()
                     + &String::from_utf8_lossy(&o.stderr);
+                let msg = msg.trim().to_string();
 
-                // "SyscomError at line N, column M: ..." をパース
+                // "SyscomError at line N, column M: ..." をパースして正確な位置に波線を出す
+                let (line, col) = parse_error_position(&msg);
+
                 let diag = Diagnostic {
                     range: Range {
-                        start: Position { line: 0, character: 0 },
-                        end:   Position { line: 0, character: 0 },
+                        start: Position { line, character: col },
+                        end:   Position { line, character: col + 1 },
                     },
                     severity: Some(DiagnosticSeverity::ERROR),
-                    message: stderr.trim().to_string(),
+                    message: msg,
                     source: Some("SyscomScript".to_string()),
                     ..Default::default()
                 };
@@ -50,6 +52,30 @@ impl SyscomLanguageServer {
             _ => vec![],
         }
     }
+}
+
+/// "SyscomError at line N, column M: ..." から (line-1, col-1) を返す
+/// パース失敗時は (0, 0)
+fn parse_error_position(msg: &str) -> (u32, u32) {
+    // "at line N" を探す
+    let line = msg
+        .split("at line ")
+        .nth(1)
+        .and_then(|s| s.split([',', ':']).next())
+        .and_then(|s| s.trim().parse::<u32>().ok())
+        .map(|n| n.saturating_sub(1))   // LSP は 0-based
+        .unwrap_or(0);
+
+    // "column M" を探す
+    let col = msg
+        .split("column ")
+        .nth(1)
+        .and_then(|s| s.split([',', ':']).next())
+        .and_then(|s| s.trim().parse::<u32>().ok())
+        .map(|n| n.saturating_sub(1))   // LSP は 0-based
+        .unwrap_or(0);
+
+    (line, col)
 }
 
 #[tower_lsp::async_trait]

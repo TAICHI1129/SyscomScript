@@ -1,0 +1,16 @@
+.vscode/**
+src/**
+target/**
+examples/**
+code/**
+grammar/**
+compiler/**
+runtime/**
+*.py
+*.bat
+*.lark
+*.html
+*.scs
+Cargo.toml
+Cargo.lock
+README.md

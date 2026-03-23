@@ -1,0 +1,43 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "SyscomScript",
+  "scopeName": "source.scs",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#keywords" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#py-call" },
+    { "include": "#class-name" }
+  ],
+  "repository": {
+    "comments": {
+      "name": "comment.line.double-slash.scs",
+      "match": "//.*$"
+    },
+    "keywords": {
+      "name": "keyword.control.scs",
+      "match": "\\b(class|func|if|else|while|for|in|range|return|import|print|and|or|not)\\b"
+    },
+    "strings": {
+      "name": "string.quoted.double.scs",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        { "name": "constant.character.escape.scs", "match": "\\\\." }
+      ]
+    },
+    "numbers": {
+      "name": "constant.numeric.scs",
+      "match": "\\b[0-9]+(\\.[0-9]+)?\\b"
+    },
+    "py-call": {
+      "name": "support.function.py.scs",
+      "match": "\\bpy\\b"
+    },
+    "class-name": {
+      "name": "entity.name.type.scs",
+      "match": "\\b[A-Z][a-zA-Z0-9_]*\\b"
+    }
+  }
+}
