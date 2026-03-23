@@ -51,11 +51,9 @@ def _resolve_scs_imports(
 def run_main(py_code: str, source_path: str = None) -> None:
     namespace: dict = {}
 
-    # .scs import の解決
     base_dir = Path(source_path).parent if source_path else Path.cwd()
     _resolve_scs_imports(py_code, base_dir, namespace, visited=set())
 
-    # メインコードの実行
     try:
         exec(py_code, namespace)
     except SyscomRuntimeError:
@@ -63,7 +61,6 @@ def run_main(py_code: str, source_path: str = None) -> None:
     except Exception as e:
         raise friendly_runtime_error(e)
 
-    # Main クラスの検証
     if "Main" not in namespace:
         raise SyscomRuntimeError("class 'Main' not found")
 
@@ -72,7 +69,6 @@ def run_main(py_code: str, source_path: str = None) -> None:
     if not hasattr(main, "run"):
         raise SyscomRuntimeError("method 'run()' not found in class Main")
 
-    # run() の実行
     try:
         main.run()
     except SyscomRuntimeError:

@@ -19,6 +19,7 @@ stmt: assign
     | print_stmt
     | if_stmt
     | while_stmt
+    | for_stmt
     | return_stmt
     | func_call_stmt
 
@@ -26,6 +27,7 @@ assign:         NAME "=" expr
 print_stmt:     "print" "(" expr ")"
 if_stmt:        "if" "(" expr ")" block ("else" block)?
 while_stmt:     "while" "(" expr ")" block
+for_stmt:       "for" NAME "in" "range" "(" expr ")" block
 return_stmt:    "return" expr?
 func_call_stmt: func_call
 

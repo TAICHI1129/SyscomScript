@@ -13,7 +13,6 @@ def to_python(tree: Tree) -> str:
         if node.data == "import_stmt":
             token = node.children[0]
             token_str = str(token)
-
             if token.type == "STRING":
                 path = token_str.strip('"').strip("'")
                 scs_imports.append(path)
@@ -35,7 +34,6 @@ def to_python(tree: Tree) -> str:
         parts.append("")
 
     parts.extend(class_lines)
-
     return "\n".join(parts)
 
 
@@ -103,6 +101,13 @@ def walk_stmt(node: Tree, lines: list, indent: str, level: int):
         lines.append(f"{pad}while {expr_to_py(node.children[0])}:")
         walk_block(node.children[1], lines, indent, level + 1)
 
+    elif node.data == "for_stmt":
+        var  = str(node.children[0])
+        end  = expr_to_py(node.children[1])
+        body = node.children[2]
+        lines.append(f"{pad}for {var} in range({end}):")
+        walk_block(body, lines, indent, level + 1)
+
     elif node.data == "return_stmt":
         if node.children:
             lines.append(f"{pad}return {expr_to_py(node.children[0])}")
@@ -125,7 +130,6 @@ def expr_to_py(expr) -> str:
     if not isinstance(expr, Tree):
         raise TypeError(f"Unsupported expr type: {type(expr)}")
 
-    # 二項演算子
     BINOP = {
         "add":      "+",
         "sub":      "-",
@@ -140,16 +144,14 @@ def expr_to_py(expr) -> str:
     }
 
     if expr.data in BINOP:
-        op = BINOP[expr.data]
+        op    = BINOP[expr.data]
         left  = expr_to_py(expr.children[0])
         right = expr_to_py(expr.children[1])
         return f"({left} {op} {right})"
 
-    # 単項演算子
     if expr.data == "not_expr":
         return f"(not {expr_to_py(expr.children[0])})"
 
-    # 関数呼び出し
     if expr.data == "func_call":
         func_name = expr.children[0]
         args = []
