@@ -91,11 +91,27 @@ def walk_stmt(node: Tree, lines: list, indent: str, level: int):
         lines.append(f"{pad}{node.children[0]} = {expr_to_py(node.children[1])}")
 
     elif node.data == "if_stmt":
-        lines.append(f"{pad}if {expr_to_py(node.children[0])}:")
-        walk_block(node.children[1], lines, indent, level + 1)
-        if len(node.children) == 3:
-            lines.append(f"{pad}else:")
-            walk_block(node.children[2], lines, indent, level + 1)
+        cond       = node.children[0]
+        then_block = node.children[1]
+        chain      = node.children[2]
+
+        lines.append(f"{pad}if {expr_to_py(cond)}:")
+        walk_block(then_block, lines, indent, level + 1)
+
+        chain_children = chain.children
+        i = 0
+        while i < len(chain_children):
+            child = chain_children[i]
+            if isinstance(child, Tree) and child.data == "block":
+                lines.append(f"{pad}else:")
+                walk_block(child, lines, indent, level + 1)
+                i += 1
+            else:
+                elif_cond  = chain_children[i]
+                elif_block = chain_children[i + 1]
+                lines.append(f"{pad}elif {expr_to_py(elif_cond)}:")
+                walk_block(elif_block, lines, indent, level + 1)
+                i += 2
 
     elif node.data == "while_stmt":
         lines.append(f"{pad}while {expr_to_py(node.children[0])}:")
@@ -151,6 +167,15 @@ def expr_to_py(expr) -> str:
         left  = expr_to_py(expr.children[0])
         right = expr_to_py(expr.children[1])
         return f"({left} {op} {right})"
+
+    # py.module.func(args) → module.func(args)
+    if expr.data == "py_call":
+        module = str(expr.children[0])
+        func   = str(expr.children[1])
+        args   = []
+        if len(expr.children) > 2:
+            args = [expr_to_py(a) for a in expr.children[2].children]
+        return f"{module}.{func}({', '.join(args)})"
 
     # 負数リテラル: -7 → (-7)
     if expr.data == "neg":
