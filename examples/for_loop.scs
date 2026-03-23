@@ -1,0 +1,13 @@
+class Main {
+    run() {
+        for i in range(5) {
+            print(i)
+        }
+
+        total = 0
+        for i in range(10) {
+            total = total + i
+        }
+        print(total)
+    }
+}

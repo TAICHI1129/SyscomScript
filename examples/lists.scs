@@ -1,0 +1,14 @@
+class Main {
+    run() {
+        nums = [10, 20, 30, 40, 50]
+
+        print(nums[0])
+        print(nums[4])
+
+        total = 0
+        for i in range(5) {
+            total = total + nums[i]
+        }
+        print(total)
+    }
+}
