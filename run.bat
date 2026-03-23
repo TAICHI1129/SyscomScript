@@ -1,29 +1,25 @@
 @echo off
-setlocal enabledelayedexpansion
 cd /d %~dp0
 
 echo ================================
 echo    SyscomScript Runner
 echo ================================
 echo.
-
-set count=0
 echo Available files in code\:
 echo.
-for %%f in (code\*.scs) do (
-    set /a count+=1
-    echo   [!count!] %%~nxf
-)
 
-if %count%==0 (
-    echo   (no .scs files found in code\)
-    echo   Place your .scs file in the code\ folder.
-    pause
-    exit /b
+for %%f in (code\*.scs) do (
+    echo   %%~nxf
 )
 
 echo.
 set /p filename="Enter file name (e.g. hello.scs): "
+
+if "%filename%"=="" (
+    echo No file name entered.
+    pause
+    exit /b 1
+)
 
 if not exist "code\%filename%" (
     echo.
