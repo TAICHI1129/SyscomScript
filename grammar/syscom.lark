@@ -40,6 +40,7 @@ arg_list:  expr ("," expr)*
      | func_call
      | list_expr
      | expr "[" expr "]"   -> index_expr
+     | "-" NUMBER          -> neg
      | "not" expr          -> not_expr
      | expr "*"  expr      -> mul
      | expr "/"  expr      -> div

@@ -152,6 +152,10 @@ def expr_to_py(expr) -> str:
         right = expr_to_py(expr.children[1])
         return f"({left} {op} {right})"
 
+    # 負数リテラル: -7 → (-7)
+    if expr.data == "neg":
+        return f"(-{str(expr.children[0])})"
+
     if expr.data == "not_expr":
         return f"(not {expr_to_py(expr.children[0])})"
 
