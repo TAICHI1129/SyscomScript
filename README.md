@@ -16,14 +16,15 @@ SyscomScript is a class-based, educational programming language that transpiles 
 
 - Python 3.10 or later
 - [lark](https://github.com/lark-parser/lark) (`pip install lark`)
-- [flask](https://flask.palletsprojects.com/) (`pip install flask`) — for the IDE only
+- [flask](https://flask.palletsprojects.com/) (`pip install flask`) — for the IDE
+- [waitress](https://docs.pylonsproject.org/projects/waitress/) (`pip install waitress`) — for the IDE (removes the development server warning)
 
 ## Installation
 
 ```bat
 git clone https://github.com/TAICHI1129/SyscomScript.git
 cd SyscomScript
-pip install lark flask
+pip install lark flask waitress
 ```
 
 ## How to Run a File
@@ -71,6 +72,7 @@ python syscom.py examples\hello.scs --debug-python
 ## How to Use the IDE
 
 ```bat
+pip install waitress
 python ide.py
 ```
 
@@ -248,7 +250,7 @@ class Main {
 SyscomScript/
 ├── syscom.py              # Entry point
 ├── run.bat                # Double-click runner
-├── ide.py                 # IDE server (Flask)
+├── ide.py                 # IDE server (Flask + waitress)
 ├── syscom.html            # IDE frontend
 ├── repl.py                # Interactive REPL
 ├── grammar/

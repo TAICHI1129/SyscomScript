@@ -43,5 +43,19 @@ def run_code():
 
     return jsonify(output=buf.getvalue())
 
+
 if __name__ == "__main__":
-    app.run(port=8000)
+    # waitress がインストールされていればそちらを使う（警告なし・安定）
+    # インストール: pip install waitress
+    try:
+        from waitress import serve
+        print("SyscomScript IDE running at http://localhost:8000")
+        serve(app, host="127.0.0.1", port=8000)
+    except ImportError:
+        # waitress がなければ Flask の開発サーバーにフォールバック
+        import logging
+        log = logging.getLogger("werkzeug")
+        log.setLevel(logging.ERROR)
+        print("SyscomScript IDE running at http://localhost:8000")
+        print("(tip: pip install waitress to suppress this fallback)")
+        app.run(port=8000)
