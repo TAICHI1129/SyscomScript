@@ -6,7 +6,7 @@ class Main {
         x = 5
         sq = square(x)
         print(sq)
-        neg = 0 - 7
+        neg = - 7
         av = abs_val(neg)
         print(av)
     }
