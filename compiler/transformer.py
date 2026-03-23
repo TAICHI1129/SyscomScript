@@ -1,33 +1,10 @@
 from lark import Tree, Token
 
-# Python 標準ライブラリの許可リスト
-# これ以外のモジュール名が import されたときは .scs ファイルとして扱う
-STDLIB_MODULES = {
-    "math", "random", "sys", "os", "time", "datetime",
-    "json", "re", "string", "collections", "itertools",
-    "functools", "pathlib", "io",
-}
-
 
 def to_python(tree: Tree) -> str:
-    """
-    program ノードを受け取り Python コード文字列を返す。
-
-    program は (import_stmt | class_def)+ で構成される。
-    import_stmt は Python コードの先頭行に、class_def はその後ろに出力する。
-
-    戻り値の構造:
-        import math          ← Python stdlib の import
-        import random        ← 同上
-                             ← (blank line)
-        class Util:          ← .scs から取り込んだクラス（bootstrap が注入）
-            ...
-        class Main:          ← メインクラス
-            ...
-    """
-    import_lines: list[str] = []   # Python の import 文
-    scs_imports:  list[str] = []   # .scs ファイルパス（bootstrap が処理する）
-    class_lines:  list[str] = []   # クラス定義
+    import_lines: list[str] = []
+    scs_imports:  list[str] = []
+    class_lines:  list[str] = []
 
     for node in tree.children:
         if not isinstance(node, Tree):
@@ -38,26 +15,19 @@ def to_python(tree: Tree) -> str:
             token_str = str(token)
 
             if token.type == "STRING":
-                # import "utils.scs" — .scs ファイルの import
-                # 文字列リテラルの前後の " を除く
                 path = token_str.strip('"').strip("'")
                 scs_imports.append(path)
             else:
-                # import math — Python 標準ライブラリの import
-                module_name = token_str
-                import_lines.append(f"import {module_name}")
+                import_lines.append(f"import {token_str}")
 
         elif node.data == "class_def":
             _collect_class(node, class_lines)
 
-    # 結合: import 行 + 空行 + クラス定義
     parts: list[str] = []
     if import_lines:
         parts.extend(import_lines)
-        parts.append("")  # 空行
+        parts.append("")
 
-    # .scs ファイルのパスを特殊コメントとして埋め込む
-    # bootstrap がこれを読み取って別ファイルを parse・注入する
     for path in scs_imports:
         parts.append(f"# __scs_import__: {path}")
 
@@ -70,7 +40,6 @@ def to_python(tree: Tree) -> str:
 
 
 def _collect_class(class_node: Tree, lines: list[str]):
-    """class_def ノードを Python クラス定義に変換して lines に追加する"""
     indent = "    "
     class_name = str(class_node.children[0])
     lines.append(f"class {class_name}:")
@@ -118,34 +87,25 @@ def walk_stmt(node: Tree, lines: list, indent: str, level: int):
     pad = indent * level
 
     if node.data == "print_stmt":
-        expr = node.children[0]
-        lines.append(f"{pad}print({expr_to_py(expr)})")
+        lines.append(f"{pad}print({expr_to_py(node.children[0])})")
 
     elif node.data == "assign":
-        name = node.children[0]
-        expr = node.children[1]
-        lines.append(f"{pad}{name} = {expr_to_py(expr)}")
+        lines.append(f"{pad}{node.children[0]} = {expr_to_py(node.children[1])}")
 
     elif node.data == "if_stmt":
-        cond = node.children[0]
-        then_block = node.children[1]
-        lines.append(f"{pad}if {expr_to_py(cond)}:")
-        walk_block(then_block, lines, indent, level + 1)
+        lines.append(f"{pad}if {expr_to_py(node.children[0])}:")
+        walk_block(node.children[1], lines, indent, level + 1)
         if len(node.children) == 3:
-            else_block = node.children[2]
             lines.append(f"{pad}else:")
-            walk_block(else_block, lines, indent, level + 1)
+            walk_block(node.children[2], lines, indent, level + 1)
 
     elif node.data == "while_stmt":
-        cond = node.children[0]
-        body = node.children[1]
-        lines.append(f"{pad}while {expr_to_py(cond)}:")
-        walk_block(body, lines, indent, level + 1)
+        lines.append(f"{pad}while {expr_to_py(node.children[0])}:")
+        walk_block(node.children[1], lines, indent, level + 1)
 
     elif node.data == "return_stmt":
         if node.children:
-            ret_expr = node.children[0]
-            lines.append(f"{pad}return {expr_to_py(ret_expr)}")
+            lines.append(f"{pad}return {expr_to_py(node.children[0])}")
         else:
             lines.append(f"{pad}return")
 
@@ -158,28 +118,43 @@ def walk_stmt(node: Tree, lines: list, indent: str, level: int):
                 walk_stmt(c, lines, indent, level)
 
 
-def expr_to_py(expr):
+def expr_to_py(expr) -> str:
     if isinstance(expr, Token):
         return str(expr)
-    elif isinstance(expr, Tree):
-        if expr.data == "add":
-            return f"({expr_to_py(expr.children[0])} + {expr_to_py(expr.children[1])})"
-        elif expr.data == "sub":
-            return f"({expr_to_py(expr.children[0])} - {expr_to_py(expr.children[1])})"
-        elif expr.data == "lt":
-            return f"({expr_to_py(expr.children[0])} < {expr_to_py(expr.children[1])})"
-        elif expr.data == "gt":
-            return f"({expr_to_py(expr.children[0])} > {expr_to_py(expr.children[1])})"
-        elif expr.data == "eq":
-            return f"({expr_to_py(expr.children[0])} == {expr_to_py(expr.children[1])})"
-        elif expr.data == "func_call":
-            func_name = expr.children[0]
-            args = []
-            if len(expr.children) > 1:
-                args_node = expr.children[1]
-                args = [expr_to_py(a) for a in args_node.children]
-            return f"self.{func_name}({', '.join(args)})"
-        else:
-            raise TypeError(f"Unsupported expr node: {expr}")
-    else:
+
+    if not isinstance(expr, Tree):
         raise TypeError(f"Unsupported expr type: {type(expr)}")
+
+    # 二項演算子
+    BINOP = {
+        "add":      "+",
+        "sub":      "-",
+        "lt":       "<",
+        "gt":       ">",
+        "lte":      "<=",
+        "gte":      ">=",
+        "eq":       "==",
+        "ne":       "!=",
+        "and_expr": "and",
+        "or_expr":  "or",
+    }
+
+    if expr.data in BINOP:
+        op = BINOP[expr.data]
+        left  = expr_to_py(expr.children[0])
+        right = expr_to_py(expr.children[1])
+        return f"({left} {op} {right})"
+
+    # 単項演算子
+    if expr.data == "not_expr":
+        return f"(not {expr_to_py(expr.children[0])})"
+
+    # 関数呼び出し
+    if expr.data == "func_call":
+        func_name = expr.children[0]
+        args = []
+        if len(expr.children) > 1:
+            args = [expr_to_py(a) for a in expr.children[1].children]
+        return f"self.{func_name}({', '.join(args)})"
+
+    raise TypeError(f"Unsupported expr node: {expr.data}")

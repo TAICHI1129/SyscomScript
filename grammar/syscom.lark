@@ -22,28 +22,33 @@ stmt: assign
     | return_stmt
     | func_call_stmt
 
-assign: NAME "=" expr
-print_stmt: "print" "(" expr ")"
-
-if_stmt: "if" "(" expr ")" block ("else" block)?
-while_stmt: "while" "(" expr ")" block
-return_stmt: "return" expr?
-
+assign:         NAME "=" expr
+print_stmt:     "print" "(" expr ")"
+if_stmt:        "if" "(" expr ")" block ("else" block)?
+while_stmt:     "while" "(" expr ")" block
+return_stmt:    "return" expr?
 func_call_stmt: func_call
+
 func_call: NAME "(" [arg_list] ")"
-arg_list: expr ("," expr)*
+arg_list:  expr ("," expr)*
 
 ?expr: STRING
      | NUMBER
      | NAME
      | func_call
-     | expr "<" expr   -> lt
-     | expr ">" expr   -> gt
-     | expr "==" expr  -> eq
-     | expr "+" expr   -> add
-     | expr "-" expr   -> sub
+     | "not" expr          -> not_expr
+     | expr "+"  expr      -> add
+     | expr "-"  expr      -> sub
+     | expr "<"  expr      -> lt
+     | expr ">"  expr      -> gt
+     | expr "<=" expr      -> lte
+     | expr ">=" expr      -> gte
+     | expr "==" expr      -> eq
+     | expr "!=" expr      -> ne
+     | expr "and" expr     -> and_expr
+     | expr "or"  expr     -> or_expr
 
-%import common.CNAME -> NAME
+%import common.CNAME          -> NAME
 %import common.NUMBER
 %import common.ESCAPED_STRING -> STRING
 %import common.WS
