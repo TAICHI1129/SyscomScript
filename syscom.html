@@ -349,7 +349,7 @@
       }
 
     } catch (err) {
-      output.textContent = 'Could not connect to ide.py.\nMake sure "python ide.py" is running.';
+      output.textContent = 'Error: This is the GitHub Pages version.\nPlease refer to the README of the GitHub repository and start SCS IDE using the correct procedure.';
       output.className = 'error';
       setStatus('err', 'connection error');
     } finally {
