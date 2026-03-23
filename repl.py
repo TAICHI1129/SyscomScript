@@ -7,8 +7,10 @@
 #
 #   解決策:
 #     - session_vars 辞書にセッション変数を蓄積する
-#     - 毎回の run() 前に instance.__dict__ へ注入し、
-#       run() 後に instance.__dict__ から読み出して session_vars に書き戻す
+#     - run() 実行前に setattr() でインスタンスに直接注入する
+#       （旧実装は repr() でコードに埋め込んでいたため、
+#         ファイルオブジェクト等の repr 不可能な値でクラッシュしていた）
+#     - run() 後に instance.__dict__ から読み出して session_vars に書き戻す
 #
 # 【複数行入力の仕組み】
 #   { } のネスト深度をカウントし、depth > 0 の間は入力を継続する。
@@ -77,28 +79,14 @@ def _brace_depth(text: str) -> int:
     return depth
 
 
-def _wrap(stmt_lines: str, session_vars: dict) -> str:
+def _wrap(stmt_lines: str) -> str:
     """
     ユーザー入力を class Main { run() { ... } } でラップする。
-    セッション変数を run() の先頭で self.xxx = <値> として注入することで
-    前回の実行結果を引き継げるようにする。
+    変数の注入は _execute() 内で setattr() を使って行うため、
+    ここではコードへの埋め込みは一切しない。
     """
-    # セッション変数の注入コード（Python として直接埋め込む）
-    inject_lines = []
-    for k, v in session_vars.items():
-        inject_lines.append(f"        self.{k} = {v!r}")
-
-    inject_block = "\n".join(inject_lines)
-
-    # ユーザー入力をインデント
     indented = "\n".join("        " + line for line in stmt_lines.splitlines())
-
-    if inject_block:
-        body = inject_block + "\n" + indented
-    else:
-        body = indented
-
-    return f"class Main {{\n    run() {{\n{body}\n    }}\n}}"
+    return f"class Main {{\n    run() {{\n{indented}\n    }}\n}}"
 
 
 def _extract_vars(instance) -> dict:
@@ -106,12 +94,12 @@ def _extract_vars(instance) -> dict:
     return {k: v for k, v in instance.__dict__.items() if not k.startswith("_")}
 
 
-def _to_py(source: str, session_vars: dict):
+def _to_py(source: str):
     """
     ラップ→parse→to_python を行い (py_code, error_str) を返す。
     成功時は error_str=None。
     """
-    wrapped = _wrap(source, session_vars)
+    wrapped = _wrap(source)
     try:
         tree = parse(wrapped)
     except SyscomSyntaxError as e:
@@ -124,6 +112,10 @@ def _execute(py_code: str, session_vars: dict):
     """
     py_code を exec し、Main().run() を呼んで
     (updated_session_vars, error_str) を返す。
+
+    変数注入は setattr() で直接行う。
+    repr() によるコード埋め込みをやめたことで、ファイルオブジェクトや
+    subprocess.CompletedProcess などの repr 不可能な値も安全に引き継げる。
     """
     ns = {}
     try:
@@ -136,8 +128,7 @@ def _execute(py_code: str, session_vars: dict):
 
     instance = ns["Main"]()
 
-    # セッション変数を注入（Python で直接 self.xxx = ... しているので
-    # ここでは不要だが、念のため属性を上書きしておく）
+    # セッション変数を setattr で直接注入（repr 不要）
     for k, v in session_vars.items():
         setattr(instance, k, v)
 
@@ -182,7 +173,12 @@ def run_repl():
         if stripped == ":vars":
             if session_vars:
                 for k, v in session_vars.items():
-                    print(f"  {k} = {v!r}")
+                    # repr() できない値は型名だけ表示してクラッシュを防ぐ
+                    try:
+                        display = repr(v)
+                    except Exception:
+                        display = f"<{type(v).__name__}>"
+                    print(f"  {k} = {display}")
             else:
                 print("  (変数なし)")
             continue
@@ -230,7 +226,7 @@ def run_repl():
         source = "\n".join(lines)
 
         # ── parse & codegen ───────────────────
-        py_code, err = _to_py(source, session_vars)
+        py_code, err = _to_py(source)
         if err:
             print(err)
             continue
