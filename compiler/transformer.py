@@ -168,14 +168,15 @@ def expr_to_py(expr) -> str:
         right = expr_to_py(expr.children[1])
         return f"({left} {op} {right})"
 
-    # py.module.func(args) → module.func(args)
+    # py.path.to.func(args) → path.to.func(args)
+    # py_call の子[0]は py_path ノード（NAME の列）、子[1]は arg_list（あれば）
     if expr.data == "py_call":
-        module = str(expr.children[0])
-        func   = str(expr.children[1])
-        args   = []
-        if len(expr.children) > 2:
-            args = [expr_to_py(a) for a in expr.children[2].children]
-        return f"{module}.{func}({', '.join(args)})"
+        py_path_node = expr.children[0]                          # py_path ノード
+        dotted = ".".join(str(t) for t in py_path_node.children) # "os.path.join" など
+        args = []
+        if len(expr.children) > 1:
+            args = [expr_to_py(a) for a in expr.children[1].children]
+        return f"{dotted}({', '.join(args)})"
 
     # obj.method(args) → variable.method(args)
     if expr.data == "obj_call":
