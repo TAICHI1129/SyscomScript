@@ -7,6 +7,7 @@ SyscomScript is a class-based, educational programming language that transpiles 
 - Simple class-based syntax
 - Transpiles to Python and runs immediately
 - REPL (interactive mode) for quick experimentation
+- Web-based IDE (`ide.py`)
 - Import Python standard libraries (`import math`)
 - Import other `.scs` files (`import "utils.scs"`)
 - `--debug-python` flag to inspect generated Python code
@@ -15,13 +16,14 @@ SyscomScript is a class-based, educational programming language that transpiles 
 
 - Python 3.10 or later
 - [lark](https://github.com/lark-parser/lark) (`pip install lark`)
+- [flask](https://flask.palletsprojects.com/) (`pip install flask`) — for the IDE only
 
 ## Installation
 
 ```bat
 git clone https://github.com/TAICHI1129/SyscomScript.git
 cd SyscomScript
-pip install lark
+pip install lark flask
 ```
 
 ## How to Run a File
@@ -37,8 +39,8 @@ Place your `.scs` file in the `code\` folder, then double-click `run.bat`. Avail
 
 Available files in code\:
 
-  [1] hello.scs
-  [2] myprogram.scs
+  hello.scs
+  myprogram.scs
 
 Enter file name (e.g. hello.scs): hello.scs
 
@@ -66,6 +68,20 @@ To inspect the generated Python code, add `--debug-python`:
 python syscom.py examples\hello.scs --debug-python
 ```
 
+## How to Use the IDE
+
+```bat
+python ide.py
+```
+
+Then open http://localhost:8000 in your browser.
+
+- Write SyscomScript in the left editor pane
+- Click **Run** (or press `Ctrl+Enter`) to execute
+- Output appears in the right pane
+- Check **Show Python** to inspect the generated Python code
+- `Tab` inserts 4 spaces for indentation
+
 ## How to Use the REPL
 
 Launch the interactive mode by running with no arguments or with `--repl`:
@@ -84,12 +100,6 @@ REPL commands:
 | `:debug` | Show last generated Python code    |
 | `:help`  | Show help                          |
 | `exit`   | Quit the REPL                      |
-
-## How to Use the IDE
-
-```bat
-python ide.py
-```
 
 ## Language Overview
 
@@ -152,6 +162,22 @@ class Main {
     run() {
         for i in range(5) {
             print(i)
+        }
+    }
+}
+```
+
+### Lists
+
+```scs
+class Main {
+    run() {
+        nums = [10, 20, 30]
+        print(nums[0])
+        print(nums[2])
+
+        for i in range(3) {
+            print(nums[i])
         }
     }
 }
@@ -222,8 +248,9 @@ class Main {
 SyscomScript/
 ├── syscom.py              # Entry point
 ├── run.bat                # Double-click runner
+├── ide.py                 # IDE server (Flask)
+├── syscom.html            # IDE frontend
 ├── repl.py                # Interactive REPL
-├── ide.py                 # IDE launcher
 ├── grammar/
 │   └── syscom.lark        # Language grammar (Lark EBNF)
 ├── compiler/
@@ -237,7 +264,10 @@ SyscomScript/
 │   ├── test.scs
 │   ├── testb.scs
 │   ├── mathlib.scs
-│   └── use_import.scs
+│   ├── use_import.scs
+│   ├── for_loop.scs
+│   ├── operators.scs
+│   └── lists.scs
 └── code/                  # Place your .scs files here
 ```
 
