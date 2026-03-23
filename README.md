@@ -9,6 +9,7 @@ SyscomScript is a class-based, educational programming language that transpiles 
 - REPL (interactive mode) for quick experimentation
 - Web-based IDE (`ide.py`)
 - Import Python standard libraries (`import math`) and call them via `py.module.func()`
+- Call deeply nested Python APIs with `py.os.path.join()`, `py.subprocess.run()`, etc.
 - Import other `.scs` files (`import "utils.scs"`) and call methods via `obj.method()`
 - `--debug-python` flag to inspect generated Python code
 
@@ -235,7 +236,8 @@ class Main {
 
 ### Import a Python standard library
 
-Use `import` to load a Python module, then call its functions with `py.module.func(args)`.
+Use `import` to load a Python module, then call its functions with `py.<path>(<args>)`.
+The path can be any number of dot-separated names, so you can reach nested APIs like `os.path.join`.
 
 ```scs
 import math
@@ -247,6 +249,46 @@ class Main {
 
         y = py.math.floor(3.7)
         print(y)
+    }
+}
+```
+
+**Deeply nested calls (3+ segments):**
+
+```scs
+import os
+
+class Main {
+    run() {
+        joined = py.os.path.join("mydir", "file.txt")
+        print(joined)
+
+        cwd = py.os.getcwd()
+        print(cwd)
+    }
+}
+```
+
+**File I/O:**
+
+```scs
+class Main {
+    run() {
+        f = py.open("hello.txt", "w")
+        f.write("Hello from SyscomScript!")
+        f.close()
+    }
+}
+```
+
+**Running system commands:**
+
+```scs
+import subprocess
+
+class Main {
+    run() {
+        py.subprocess.run(["echo", "hello"])
     }
 }
 ```
