@@ -131,6 +131,9 @@ def expr_to_py(expr) -> str:
         raise TypeError(f"Unsupported expr type: {type(expr)}")
 
     BINOP = {
+        "mul":      "*",
+        "div":      "/",
+        "mod":      "%",
         "add":      "+",
         "sub":      "-",
         "lt":       "<",

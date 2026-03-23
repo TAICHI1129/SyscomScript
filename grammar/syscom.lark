@@ -41,6 +41,9 @@ arg_list:  expr ("," expr)*
      | list_expr
      | expr "[" expr "]"   -> index_expr
      | "not" expr          -> not_expr
+     | expr "*"  expr      -> mul
+     | expr "/"  expr      -> div
+     | expr "%"  expr      -> mod
      | expr "+"  expr      -> add
      | expr "-"  expr      -> sub
      | expr "<"  expr      -> lt
