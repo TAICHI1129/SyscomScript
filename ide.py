@@ -50,6 +50,7 @@ if __name__ == "__main__":
     try:
         from waitress import serve
         print("SyscomScript IDE running at http://localhost:8000")
+        print("Press Ctrl + C to stop.")
         serve(app, host="127.0.0.1", port=8000)
     except ImportError:
         # waitress がなければ Flask の開発サーバーにフォールバック
@@ -57,5 +58,6 @@ if __name__ == "__main__":
         log = logging.getLogger("werkzeug")
         log.setLevel(logging.ERROR)
         print("SyscomScript IDE running at http://localhost:8000")
+        print("Press Ctrl + C to stop.")
         print("(tip: pip install waitress to suppress this fallback)")
         app.run(port=8000)
