@@ -1,0 +1,50 @@
+?start: program
+
+program: (import_stmt | class_def)+
+
+import_stmt: "import" (NAME | STRING)
+
+class_def: "class" NAME "{" class_body "}"
+
+class_body: (method_def | func_def)*
+
+method_def: NAME "(" ")" block
+
+func_def: "func" NAME "(" [param_list] ")" block
+param_list: NAME ("," NAME)*
+
+block: "{" stmt* "}"
+
+stmt: assign
+    | print_stmt
+    | if_stmt
+    | while_stmt
+    | return_stmt
+    | func_call_stmt
+
+assign: NAME "=" expr
+print_stmt: "print" "(" expr ")"
+
+if_stmt: "if" "(" expr ")" block ("else" block)?
+while_stmt: "while" "(" expr ")" block
+return_stmt: "return" expr?
+
+func_call_stmt: func_call
+func_call: NAME "(" [arg_list] ")"
+arg_list: expr ("," expr)*
+
+?expr: STRING
+     | NUMBER
+     | NAME
+     | func_call
+     | expr "<" expr   -> lt
+     | expr ">" expr   -> gt
+     | expr "==" expr  -> eq
+     | expr "+" expr   -> add
+     | expr "-" expr   -> sub
+
+%import common.CNAME -> NAME
+%import common.NUMBER
+%import common.ESCAPED_STRING -> STRING
+%import common.WS
+%ignore WS

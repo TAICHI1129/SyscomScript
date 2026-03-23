@@ -1,0 +1,10 @@
+[package]
+name = "toyst_lsp"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tower-lsp = "0.21"  # LSPフレームワーク
+tokio = { version = "1.38", features = ["full"] }  # async runtime
+serde = { version = "1.0", features = ["derive"] }  # JSON用
+serde_json = "1.0"

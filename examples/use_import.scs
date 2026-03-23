@@ -1,0 +1,23 @@
+import math
+import "mathlib.scs"
+
+class Main {
+    run() {
+        x = 5
+        sq = square(x)
+        print(sq)
+        neg = 0 - 7
+        av = abs_val(neg)
+        print(av)
+    }
+
+    func square(n) {
+        lib = MathLib()
+        return lib.square(n)
+    }
+
+    func abs_val(n) {
+        lib = MathLib()
+        return lib.abs_val(n)
+    }
+}
