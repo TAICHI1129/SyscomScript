@@ -4,6 +4,10 @@
   "description": "Language support for SyscomScript (.scs files)",
   "version": "0.1.0",
   "publisher": "TAICHI1129",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TAICHI1129/SyscomScript"
+  },
   "engines": {
     "vscode": "^1.75.0"
   },
