@@ -48,7 +48,23 @@ def _resolve_scs_imports(
             raise friendly_runtime_error(e)
 
 
-def run_main(py_code: str, source_path: str = None) -> None:
+def run_main(
+    py_code: str,
+    source_path: str = None,
+    session_vars: dict = None,
+) -> dict:
+    """
+    py_code を実行して Main().run() を呼ぶ。
+
+    session_vars:
+        REPL から渡されるセッション変数辞書。
+        None の場合は通常実行（変数の引き継ぎなし）。
+        渡された場合は run() 前に setattr() で注入し、
+        実行後に instance.__dict__ を返す。
+
+    戻り値:
+        実行後のセッション変数辞書（session_vars=None の場合は空辞書）
+    """
     namespace: dict = {}
 
     base_dir = Path(source_path).parent if source_path else Path.cwd()
@@ -69,9 +85,19 @@ def run_main(py_code: str, source_path: str = None) -> None:
     if not hasattr(main, "run"):
         raise SyscomRuntimeError("method 'run()' not found in class Main")
 
+    # REPL セッション変数を setattr で注入（repr 不要・オブジェクトも安全）
+    if session_vars:
+        for k, v in session_vars.items():
+            setattr(main, k, v)
+
     try:
         main.run()
     except SyscomRuntimeError:
         raise
     except Exception as e:
         raise friendly_runtime_error(e)
+
+    # 実行後の変数を返す（_ で始まらないものすべて）
+    if session_vars is not None:
+        return {k: v for k, v in main.__dict__.items() if not k.startswith("_")}
+    return {}
