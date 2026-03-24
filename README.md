@@ -28,6 +28,8 @@ cd SyscomScript
 pip install lark flask waitress
 ```
 
+Running version_update.bat will replace it with the latest version.
+
 ## How to Run a File
 
 **Option 1 — Double-click `run.bat`**
