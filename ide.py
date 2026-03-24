@@ -14,15 +14,16 @@ def index():
 
 @app.route("/run", methods=["POST"])
 def run_code():
-    data = request.get_json()
-    code = data.get("code", "")
-    debug = data.get("debug", False)
+    data    = request.get_json()
+    code    = data.get("code", "")
+    debug   = data.get("debug", False)
+    success = True
 
     old_stdout = sys.stdout
     sys.stdout = buf = io.StringIO()
 
     try:
-        tree = parse(code)
+        tree    = parse(code)
         py_code = to_python(tree)
 
         if debug:
@@ -34,26 +35,26 @@ def run_code():
 
     except (SyscomSyntaxError, SyscomRuntimeError) as e:
         buf.write(str(e) + "\n")
+        success = False
 
     except Exception as e:
         buf.write(f"Unexpected error: {e}\n")
+        success = False
 
     finally:
         sys.stdout = old_stdout
 
-    return jsonify(output=buf.getvalue())
+    # success フラグをフロントエンドに返す（文字列マッチによる誤検知を排除）
+    return jsonify(output=buf.getvalue(), success=success)
 
 
 if __name__ == "__main__":
-    # waitress がインストールされていればそちらを使う（警告なし・安定）
-    # インストール: pip install waitress
     try:
         from waitress import serve
         print("SyscomScript IDE running at http://localhost:8000")
         print("Press Ctrl + C to stop.")
         serve(app, host="127.0.0.1", port=8000)
     except ImportError:
-        # waitress がなければ Flask の開発サーバーにフォールバック
         import logging
         log = logging.getLogger("werkzeug")
         log.setLevel(logging.ERROR)

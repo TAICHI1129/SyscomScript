@@ -1,27 +1,33 @@
 from lark import Lark, UnexpectedToken, UnexpectedCharacters
 from pathlib import Path
-from compiler.error import SyscomSyntaxError  # 新しく作ったエラークラス
+from compiler.error import SyscomSyntaxError
 
-# grammar 読み込み
-grammar_path = Path(__file__).parent.parent / "grammar" / "syscom.lark"
-grammar = grammar_path.read_text(encoding="utf-8")
+_GRAMMAR_PATH = Path(__file__).parent.parent / "grammar" / "syscom.lark"
 
-_parser = Lark(grammar, parser="lalr", propagate_positions=True)
+# パーサを遅延初期化する（テスト等でカレントディレクトリが変わっても安全）
+_parser: Lark | None = None
+
+
+def _get_parser() -> Lark:
+    global _parser
+    if _parser is None:
+        grammar = _GRAMMAR_PATH.read_text(encoding="utf-8")
+        _parser = Lark(grammar, parser="lalr", propagate_positions=True)
+    return _parser
+
 
 def parse(code: str):
     try:
-        return _parser.parse(code)
+        return _get_parser().parse(code)
     except UnexpectedToken as e:
-        # トークンが予期せぬものだった場合
         raise SyscomSyntaxError(
             message=f"Unexpected token '{e.token}'",
             line=e.line,
-            column=e.column
+            column=e.column,
         )
     except UnexpectedCharacters as e:
-        # 文字が予期せぬものだった場合
         raise SyscomSyntaxError(
             message=f"Unexpected character '{e.char}'",
             line=e.line,
-            column=e.column
+            column=e.column,
         )

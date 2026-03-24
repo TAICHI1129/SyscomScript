@@ -28,7 +28,10 @@ print_stmt:     "print" "(" expr ")"
 if_stmt:        "if" "(" expr ")" block elif_chain
 elif_chain:     ("else" "if" "(" expr ")" block)* ("else" block)?
 while_stmt:     "while" "(" expr ")" block
-for_stmt:       "for" NAME "in" "range" "(" expr ")" block
+
+// range(end) または range(start, end) または range(start, end, step) に対応
+for_stmt:       "for" NAME "in" "range" "(" expr ("," expr)* ")" block
+
 return_stmt:    "return" expr?
 func_call_stmt: func_call
 
@@ -70,3 +73,7 @@ list_items: expr ("," expr)*
 %import common.ESCAPED_STRING -> STRING
 %import common.WS
 %ignore WS
+
+// コメント構文（// から行末まで）
+COMMENT: /\/\/.*/
+%ignore COMMENT

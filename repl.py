@@ -1,25 +1,18 @@
 # repl.py — SyscomScript 対話実行モード (REPL)
 #
-# 【変数保持の仕組み】
-#   SyscomScript の assign は Python の「self.x = ...」になる。
-#   つまり変数はインスタンス属性として保存される。
-#   REPL では毎回新しい Main() を作るため、そのままでは変数が消えてしまう。
+# 変数保持の仕組み:
+#   run_main(session_vars=...) に変数辞書を渡すと
+#   Main インスタンスへ setattr() で注入し、実行後に更新辞書を返す。
+#   独自の _execute()/_to_py() は廃止し、bootstrap を共通で使う。
 #
-#   解決策:
-#     - session_vars 辞書にセッション変数を蓄積する
-#     - run() 実行前に setattr() でインスタンスに直接注入する
-#       （旧実装は repr() でコードに埋め込んでいたため、
-#         ファイルオブジェクト等の repr 不可能な値でクラッシュしていた）
-#     - run() 後に instance.__dict__ から読み出して session_vars に書き戻す
-#
-# 【複数行入力の仕組み】
+# 複数行入力の仕組み:
 #   { } のネスト深度をカウントし、depth > 0 の間は入力を継続する。
-#   while / if などのブロック構文は自動的に複数行入力モードになる。
 
 import sys
 from compiler.parser import parse
 from compiler.transformer import to_python
-from compiler.error import SyscomSyntaxError
+from runtime.bootstrap import run_main
+from compiler.error import SyscomSyntaxError, SyscomRuntimeError
 
 BANNER = """\
 ╔══════════════════════════════════════╗
@@ -80,23 +73,14 @@ def _brace_depth(text: str) -> int:
 
 
 def _wrap(stmt_lines: str) -> str:
-    """
-    ユーザー入力を class Main { run() { ... } } でラップする。
-    変数の注入は _execute() 内で setattr() を使って行うため、
-    ここではコードへの埋め込みは一切しない。
-    """
+    """ユーザー入力を class Main { run() { ... } } でラップする。"""
     indented = "\n".join("        " + line for line in stmt_lines.splitlines())
     return f"class Main {{\n    run() {{\n{indented}\n    }}\n}}"
 
 
-def _extract_vars(instance) -> dict:
-    """run() 後のインスタンス属性（_ で始まらないもの）をすべて返す"""
-    return {k: v for k, v in instance.__dict__.items() if not k.startswith("_")}
-
-
-def _to_py(source: str):
+def _compile(source: str) -> tuple[str | None, str | None]:
     """
-    ラップ→parse→to_python を行い (py_code, error_str) を返す。
+    ソースをラップ→parse→to_python して (py_code, error_str) を返す。
     成功時は error_str=None。
     """
     wrapped = _wrap(source)
@@ -104,41 +88,7 @@ def _to_py(source: str):
         tree = parse(wrapped)
     except SyscomSyntaxError as e:
         return None, str(e)
-    py_code = to_python(tree)
-    return py_code, None
-
-
-def _execute(py_code: str, session_vars: dict):
-    """
-    py_code を exec し、Main().run() を呼んで
-    (updated_session_vars, error_str) を返す。
-
-    変数注入は setattr() で直接行う。
-    repr() によるコード埋め込みをやめたことで、ファイルオブジェクトや
-    subprocess.CompletedProcess などの repr 不可能な値も安全に引き継げる。
-    """
-    ns = {}
-    try:
-        exec(py_code, ns)
-    except Exception as e:
-        return session_vars, f"Compile error: {e}"
-
-    if "Main" not in ns:
-        return session_vars, "Main クラスが見つかりません"
-
-    instance = ns["Main"]()
-
-    # セッション変数を setattr で直接注入（repr 不要）
-    for k, v in session_vars.items():
-        setattr(instance, k, v)
-
-    try:
-        instance.run()
-    except Exception as e:
-        return session_vars, f"Runtime error: {e}"
-
-    updated = _extract_vars(instance)
-    return updated, None
+    return to_python(tree), None
 
 
 # ──────────────────────────────────────────
@@ -173,7 +123,6 @@ def run_repl():
         if stripped == ":vars":
             if session_vars:
                 for k, v in session_vars.items():
-                    # repr() できない値は型名だけ表示してクラッシュを防ぐ
                     try:
                         display = repr(v)
                     except Exception:
@@ -208,7 +157,6 @@ def run_repl():
         lines.append(first_line)
         depth += _brace_depth(first_line)
 
-        # ブロックが開いている間は続けて読む
         while depth > 0:
             try:
                 cont = input(PROMPT_CONT)
@@ -225,18 +173,21 @@ def run_repl():
 
         source = "\n".join(lines)
 
-        # ── parse & codegen ───────────────────
-        py_code, err = _to_py(source)
+        # ── コンパイル ───────────────────────
+        py_code, err = _compile(source)
         if err:
             print(err)
             continue
 
         last_py_code = py_code
 
-        # ── 実行 ─────────────────────────────
-        session_vars, err = _execute(py_code, session_vars)
-        if err:
-            print(err)
+        # ── 実行（bootstrap.run_main で統一） ─
+        try:
+            session_vars = run_main(py_code, session_vars=session_vars)
+        except (SyscomSyntaxError, SyscomRuntimeError) as e:
+            print(e)
+        except Exception as e:
+            print(f"Unexpected error: {e}")
 
 
 if __name__ == "__main__":

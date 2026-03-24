@@ -189,11 +189,9 @@
     word-break: break-all;
   }
 
-  #output.empty { color: var(--muted); font-style: italic; }
-  #output.error { color: var(--error); }
+  #output.empty   { color: var(--muted); font-style: italic; }
+  #output.error   { color: var(--error); }
   #output.success { color: var(--text); }
-
-  .output-line { display: block; }
 
   /* ── Status bar ── */
   .statusbar {
@@ -275,20 +273,18 @@
 </div>
 
 <script>
-  const editor   = document.getElementById('editor');
-  const output   = document.getElementById('output');
-  const runBtn   = document.getElementById('run-btn');
+  const editor     = document.getElementById('editor');
+  const output     = document.getElementById('output');
+  const runBtn     = document.getElementById('run-btn');
   const statusDot  = document.getElementById('status-dot');
   const statusText = document.getElementById('status-text');
   const charCount  = document.getElementById('char-count');
 
-  // 文字数カウント
   editor.addEventListener('input', () => {
     charCount.textContent = editor.value.length + ' chars';
   });
   charCount.textContent = editor.value.length + ' chars';
 
-  // Tab キーでインデント挿入
   editor.addEventListener('keydown', e => {
     if (e.key === 'Tab') {
       e.preventDefault();
@@ -296,7 +292,6 @@
       editor.value = editor.value.slice(0, s) + '    ' + editor.value.slice(s);
       editor.selectionStart = editor.selectionEnd = s + 4;
     }
-    // Ctrl+Enter でも実行
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       runCode();
     }
@@ -316,7 +311,6 @@
   async function runCode() {
     const code  = editor.value;
     const debug = document.getElementById('debug-check').checked;
-
     if (!code.trim()) return;
 
     runBtn.disabled = true;
@@ -325,31 +319,34 @@
     output.textContent = '';
 
     try {
-      const res = await fetch('/run', {
+      const res  = await fetch('/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, debug })
+        body: JSON.stringify({ code, debug }),
       });
-
       const data = await res.json();
       const text = data.output || '';
 
+      // success フラグで判定（文字列マッチによる誤検知を廃止）
       if (!text.trim()) {
         output.textContent = '// (no output)';
-        output.className = 'empty';
+        output.className   = 'empty';
         setStatus('ok', 'done');
-      } else if (text.includes('SyscomError') || text.includes('Error') || text.includes('error')) {
+      } else if (!data.success) {
         output.textContent = text;
-        output.className = 'error';
+        output.className   = 'error';
         setStatus('err', 'error');
       } else {
         output.textContent = text;
-        output.className = 'success';
+        output.className   = 'success';
         setStatus('ok', 'done');
       }
 
     } catch (err) {
-      output.textContent = 'Error: This is the GitHub Pages version.\nPlease refer to the README of the GitHub repository and start SCS IDE using the correct procedure.';
+      output.textContent =
+        'Error: This is the GitHub Pages version.\n' +
+        'Please refer to the README of the GitHub repository and ' +
+        'start SCS IDE using the correct procedure.';
       output.className = 'error';
       setStatus('err', 'connection error');
     } finally {
