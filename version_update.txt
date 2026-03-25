@@ -12,7 +12,7 @@ cd /d %~dp0
 
 git --version >nul 2>&1
 if %errorlevel% equ 0 (
-    echo Executing a pull in git…
+    echo Executing a pull in git...
     git pull origin %BRANCH%
     echo.
     echo === Update Complete ===
@@ -20,10 +20,10 @@ if %errorlevel% equ 0 (
     exit /b
 )
 
-echo Git cannot be found. Switching to ZIP download method…
+echo Git cannot be found. Switching to ZIP download method...
 echo.
 
-echo Downloading ZIP…
+echo Downloading ZIP...
 curl -L "%ZIP_URL%" -o "%ZIP_FILE%"
 if %errorlevel% neq 0 (
     echo Failed to download the ZIP.
@@ -39,7 +39,7 @@ set EXTRACTED=%REPO_NAME
 if exist "%EXTRACTED%" (
     echo Overwriting the extracted files…
     xcopy "%EXTRACTED%\*" ".\" /E /H /Y >nul
-    echo Cleaning up…
+    echo Cleaning up...
     rmdir /S /Q "%EXTRACTED%"
 )
 
