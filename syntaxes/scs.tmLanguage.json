@@ -5,10 +5,15 @@
   "patterns": [
     { "include": "#comments" },
     { "include": "#keywords" },
+    { "include": "#control" },
+    { "include": "#builtin-functions" },
+    { "include": "#py-prefix" },
+    { "include": "#class-def" },
+    { "include": "#func-def" },
+    { "include": "#class-name" },
     { "include": "#strings" },
     { "include": "#numbers" },
-    { "include": "#py-call" },
-    { "include": "#class-name" }
+    { "include": "#operators" }
   ],
   "repository": {
     "comments": {
@@ -17,7 +22,45 @@
     },
     "keywords": {
       "name": "keyword.control.scs",
-      "match": "\\b(class|func|if|else|while|for|in|range|return|import|print|and|or|not)\\b"
+      "match": "\\b(if|else|while|for|in|range|return|and|or|not)\\b"
+    },
+    "control": {
+      "name": "keyword.other.scs",
+      "match": "\\b(import|class|func)\\b"
+    },
+    "builtin-functions": {
+      "name": "support.function.builtin.scs",
+      "match": "\\b(print)\\b"
+    },
+    "py-prefix": {
+      "patterns": [
+        {
+          "comment": "py.module.func() 全体をマッチ",
+          "match": "\\b(py)\\.([$A-Za-z_][\\w.]*)",
+          "captures": {
+            "1": { "name": "keyword.other.py.scs" },
+            "2": { "name": "support.function.py.scs" }
+          }
+        }
+      ]
+    },
+    "class-def": {
+      "match": "\\b(class)\\s+([A-Z][a-zA-Z0-9_]*)",
+      "captures": {
+        "1": { "name": "keyword.other.scs" },
+        "2": { "name": "entity.name.class.scs" }
+      }
+    },
+    "func-def": {
+      "match": "\\b(func)\\s+([a-z_][a-zA-Z0-9_]*)",
+      "captures": {
+        "1": { "name": "keyword.other.scs" },
+        "2": { "name": "entity.name.function.scs" }
+      }
+    },
+    "class-name": {
+      "name": "entity.name.type.scs",
+      "match": "\\b[A-Z][a-zA-Z0-9_]*\\b"
     },
     "strings": {
       "name": "string.quoted.double.scs",
@@ -29,15 +72,11 @@
     },
     "numbers": {
       "name": "constant.numeric.scs",
-      "match": "\\b[0-9]+(\\.[0-9]+)?\\b"
+      "match": "-?\\b[0-9]+(\\.[0-9]+)?\\b"
     },
-    "py-call": {
-      "name": "support.function.py.scs",
-      "match": "\\bpy\\b"
-    },
-    "class-name": {
-      "name": "entity.name.type.scs",
-      "match": "\\b[A-Z][a-zA-Z0-9_]*\\b"
+    "operators": {
+      "name": "keyword.operator.scs",
+      "match": "(==|!=|<=|>=|<|>|=|\\+|-|\\*|/|%)"
     }
   }
 }

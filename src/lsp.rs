@@ -1,11 +1,4 @@
 // src/lsp.rs — SyscomScript Language Server 実装
-//
-// 変更点:
-//   - Command::new("python") の無音失敗を修正
-//     → python3 → python の順でフォールバック、両方失敗なら診断エラーを返す
-//   - parse_error_position() を正規表現ベースに変更
-//     → メッセージフォーマットが変わっても (0,0) に黙って落ちない
-//   - exec エラーも診断として返す（握りつぶさない）
 
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::*;
@@ -22,8 +15,6 @@ impl SyscomLanguageServer {
         Self { client }
     }
 
-    /// python3 → python の順で試し、最初に成功したコマンドの Output を返す。
-    /// どちらも起動失敗なら Err を返す。
     fn run_python(args: &[&str]) -> std::io::Result<Output> {
         for cmd in &["python3", "python"] {
             match Command::new(cmd).args(args).output() {
@@ -33,12 +24,10 @@ impl SyscomLanguageServer {
         }
         Err(std::io::Error::new(
             std::io::ErrorKind::NotFound,
-            "python3 / python コマンドが見つかりません。\
-             Python をインストールして PATH を通してください。",
+            "python3 / python コマンドが見つかりません。",
         ))
     }
 
-    /// Python で syscom パーサを呼び、エラーがあれば Diagnostics として返す。
     async fn check_scs_file(&self, _uri: &Url, text: &str) -> Vec<Diagnostic> {
         let tmp = std::env::temp_dir().join("_syscom_lsp_check.scs");
         if std::fs::write(&tmp, text).is_err() {
@@ -51,7 +40,6 @@ impl SyscomLanguageServer {
         let o = match output {
             Ok(o)  => o,
             Err(e) => {
-                // Python 自体が見つからない場合はその旨を診断として返す
                 return vec![Diagnostic {
                     range: Range {
                         start: Position { line: 0, character: 0 },
@@ -75,13 +63,9 @@ impl SyscomLanguageServer {
             String::from_utf8_lossy(&o.stderr),
         );
         let msg = msg.trim().to_string();
-
-        if msg.is_empty() {
-            return vec![];
-        }
+        if msg.is_empty() { return vec![]; }
 
         let (line, col) = parse_error_position(&msg);
-
         vec![Diagnostic {
             range: Range {
                 start: Position { line, character: col },
@@ -95,14 +79,8 @@ impl SyscomLanguageServer {
     }
 }
 
-/// "SyscomError at line N, column M: ..." から (line-1, col-1) を返す（LSP は 0-based）。
-/// 正規表現ベースなのでメッセージフォーマットの変化に強い。
-/// マッチしない場合は (0, 0) を返す（以前と同じ）が、
-/// 呼び出し元がログを出すので無音失敗にはならない。
 fn parse_error_position(msg: &str) -> (u32, u32) {
-    // "at line 5, column 12" または "at line 5" の形を想定
     let re = Regex::new(r"at line (\d+)(?:, column (\d+))?").unwrap();
-
     if let Some(caps) = re.captures(msg) {
         let line = caps.get(1)
             .and_then(|m| m.as_str().parse::<u32>().ok())
@@ -114,8 +92,46 @@ fn parse_error_position(msg: &str) -> (u32, u32) {
             .unwrap_or(0);
         return (line, col);
     }
-
     (0, 0)
+}
+
+fn completion_items() -> Vec<CompletionItem> {
+    let snippets: &[(&str, &str, &str)] = &[
+        ("if",      "if (${1:cond}) {\n\t${2}\n}",                     "if statement"),
+        ("else",    "else {\n\t${1}\n}",                               "else block"),
+        ("while",   "while (${1:cond}) {\n\t${2}\n}",                  "while loop"),
+        ("for",     "for ${1:i} in range(${2:n}) {\n\t${3}\n}",        "for loop"),
+        ("return",  "return ${1}",                                      "return statement"),
+        ("class",   "class ${1:Name} {\n\trun() {\n\t\t${2}\n\t}\n}",  "class definition"),
+        ("func",    "func ${1:name}(${2:args}) {\n\t${3}\n}",          "function definition"),
+        ("print",   "print(${1})",                                      "print to stdout"),
+        ("import",  "import ${1:module}",                               "import module"),
+        ("py.math.sqrt",     "py.math.sqrt(${1})",            "math.sqrt()"),
+        ("py.math.floor",    "py.math.floor(${1})",           "math.floor()"),
+        ("py.math.ceil",     "py.math.ceil(${1})",            "math.ceil()"),
+        ("py.os.getcwd",     "py.os.getcwd()",                 "os.getcwd()"),
+        ("py.os.path.join",  "py.os.path.join(${1}, ${2})",   "os.path.join()"),
+        ("py.open",          "py.open(${1:\"file\"}, ${2:\"r\"})", "open file"),
+        ("py.subprocess.run","py.subprocess.run([${1}])",      "subprocess.run()"),
+    ];
+
+    snippets.iter().map(|(label, insert, detail)| {
+        let kind = if label.starts_with("py.") {
+            CompletionItemKind::FUNCTION
+        } else if ["class", "func"].contains(label) {
+            CompletionItemKind::CLASS
+        } else {
+            CompletionItemKind::KEYWORD
+        };
+        CompletionItem {
+            label: label.to_string(),
+            kind: Some(kind),
+            detail: Some(detail.to_string()),
+            insert_text: Some(insert.to_string()),
+            insert_text_format: Some(InsertTextFormat::SNIPPET),
+            ..Default::default()
+        }
+    }).collect()
 }
 
 #[tower_lsp::async_trait]
@@ -127,6 +143,13 @@ impl LanguageServer for SyscomLanguageServer {
                     TextDocumentSyncKind::FULL,
                 )),
                 hover_provider: Some(HoverProviderCapability::Simple(true)),
+                completion_provider: Some(CompletionOptions {
+                    trigger_characters: Some(vec![
+                        ".".to_string(),
+                        " ".to_string(),
+                    ]),
+                    ..Default::default()
+                }),
                 ..Default::default()
             },
             ..Default::default()
@@ -159,12 +182,24 @@ impl LanguageServer for SyscomLanguageServer {
         self.client.publish_diagnostics(uri, diags, None).await;
     }
 
+    async fn completion(
+        &self,
+        _params: CompletionParams,
+    ) -> Result<Option<CompletionResponse>> {
+        Ok(Some(CompletionResponse::Array(completion_items())))
+    }
+
     async fn hover(&self, params: HoverParams) -> Result<Option<Hover>> {
         let pos = params.text_document_position_params.position;
         Ok(Some(Hover {
-            contents: HoverContents::Scalar(MarkedString::String(
-                format!("Line {}, Column {}", pos.line + 1, pos.character + 1),
-            )),
+            contents: HoverContents::Markup(MarkupContent {
+                kind: MarkupKind::Markdown,
+                value: format!(
+                    "**SyscomScript** — Line {}, Column {}",
+                    pos.line + 1,
+                    pos.character + 1
+                ),
+            }),
             range: None,
         }))
     }
