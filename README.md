@@ -358,7 +358,7 @@ SyscomScript/
   → runtime/bootstrap.py     resolve imports → exec() → Main().run()
 ```
 
-##How to use the SyscomScript extension in VS Code
+## How to use the SyscomScript extension in VS Code
 
      ### Installation
      1. Clone or download SyscomScript
