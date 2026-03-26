@@ -15,7 +15,7 @@ param_list: NAME ("," NAME)*
 
 block: "{" stmt* "}"
 
-stmt: assign
+?stmt: assign
     | print_stmt
     | if_stmt
     | while_stmt
