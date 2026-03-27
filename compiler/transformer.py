@@ -10,6 +10,23 @@ def _indent(level: int, indent: str = "    ") -> str:
     return indent * level
 
 
+def _extract_args(rest) -> list[str]:
+    """
+    arg_list ノード（または None）から引数文字列のリストを取り出す。
+    grammar の [arg_list] は省略時に None を渡してくることがあるため、
+    None チェックを一か所にまとめる。
+    """
+    if not rest:
+        return []
+    node = rest[0]
+    if node is None:
+        return []
+    if isinstance(node, Tree):
+        return list(node.children)
+    # Token が直接来るケース（引数が1つだけで arg_list が省かれた場合）
+    return [str(node)]
+
+
 @v_args(inline=True)
 class _ExprTransformer(Transformer):
     """AST の式ノードを Python コード文字列へ変換する。"""
@@ -43,15 +60,16 @@ class _ExprTransformer(Transformer):
     # ── 型変換: int(x) str(x) float(x) bool(x) ──────
 
     def cast_expr(self, type_tok, expr_str):
-        # grammar: ("int"|"str"|"float"|"bool") "(" expr ")"
-        # type_tok = Token('__ANON', 'int') などのキーワードトークン
         return f"{type_tok}({expr_str})"
 
     # ── 式中の関数呼び出し ────────────────────────────
 
     def func_call(self, name, *rest):
-        args = list(rest[0].children) if rest else []
-        return f"self.{name}({', '.join(args)})"
+        args = _extract_args(rest)
+        name_str = str(name)
+        # 大文字始まり = クラスコンストラクタ or グローバル関数 → self. 不要
+        prefix = "" if name_str[0].isupper() else "self."
+        return f"{prefix}{name_str}({', '.join(args)})"
 
     def arg_list(self, *args):
         return Tree("arg_list", list(args))
@@ -60,16 +78,16 @@ class _ExprTransformer(Transformer):
 
     def py_call(self, py_path, *rest):
         dotted = ".".join(str(t) for t in py_path.children)
-        args = list(rest[0].children) if rest else []
+        args = _extract_args(rest)
         return f"{dotted}({', '.join(args)})"
 
     def py_path(self, *names):
         return Tree("py_path", list(names))
 
-    # ── obj.method(args) ─────────────────────────────
+    # ── obj.method(args) 式 ───────────────────────────
 
     def obj_call(self, obj, method, *rest):
-        args = list(rest[0].children) if rest else []
+        args = _extract_args(rest)
         return f"{obj}.{method}({', '.join(args)})"
 
     # ── リスト ───────────────────────────────────────
@@ -86,7 +104,7 @@ class _ExprTransformer(Transformer):
     def dict_expr(self, *rest):
         if not rest:
             return "{}"
-        pairs = rest[0].children  # dict_pair ノードのリスト
+        pairs = rest[0].children
         items = [f"{p.children[0]}: {p.children[1]}" for p in pairs]
         return "{" + ", ".join(items) + "}"
 
@@ -232,6 +250,18 @@ class _CodeGen:
             case "func_call_stmt":
                 fc = node.children[0]
                 lines.append(f"{pad}{self.expr(fc)}")
+
+            case "obj_call_stmt":
+                # NAME "." NAME "(" [arg_list] ")" を単独文として処理
+                obj    = str(node.children[0])
+                method = str(node.children[1])
+                # children[2] は arg_list または None
+                arg_node = node.children[2] if len(node.children) > 2 else None
+                if arg_node is None or not isinstance(arg_node, Tree):
+                    arg_strs = []
+                else:
+                    arg_strs = [self.expr(a) for a in arg_node.children]
+                lines.append(f"{pad}{obj}.{method}({', '.join(arg_strs)})")
 
             case _:
                 raise NotImplementedError(

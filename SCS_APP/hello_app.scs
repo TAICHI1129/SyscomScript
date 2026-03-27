@@ -1,0 +1,12 @@
+// examples/hello_app.scs
+// SCS_APP の最小サンプル（App + Window のみ）
+
+import "app.scs"
+
+class Main {
+    run() {
+        app = App()
+        win = app.window("Hello SCS_APP", 320, 200)
+        app.start()
+    }
+}

@@ -1,0 +1,23 @@
+// SCS_APP/app.scs
+// App と Window のブリッジ定義
+//
+// このファイルを import すると _scs_app_runtime.py が自動ロードされ
+// App() と Window 操作が使えるようになる。
+//
+// 使い方:
+//   import "SCS_APP/app.scs"
+//   class Main {
+//       run() {
+//           app = App()
+//           win = app.window("My App", 400, 300)
+//           app.start()
+//       }
+//   }
+
+class _AppBridge {
+    // 内部ブリッジクラス。直接使わない。
+    // App() は _scs_app_runtime.py の関数が処理する。
+    run() {
+        print("SCS_APP loaded")
+    }
+}

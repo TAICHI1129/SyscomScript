@@ -22,6 +22,7 @@ block: "{" stmt* "}"
     | for_stmt
     | return_stmt
     | func_call_stmt
+    | obj_call_stmt
 
 assign:         NAME "=" expr
 print_stmt:     "print" "(" expr ")"
@@ -33,7 +34,12 @@ while_stmt:     "while" "(" expr ")" block
 for_stmt:       "for" NAME "in" "range" "(" expr ("," expr)* ")" block
 
 return_stmt:    "return" expr?
+
+// 関数呼び出し文（単独）
 func_call_stmt: func_call
+
+// obj.method(args) 文（単独）― 戻り値を捨てる呼び出し
+obj_call_stmt:  NAME "." NAME "(" [arg_list] ")"
 
 func_call: NAME "(" [arg_list] ")"
 arg_list:  expr ("," expr)*
