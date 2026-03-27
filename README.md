@@ -362,7 +362,7 @@ SyscomScript/
 
 ### Installation
  1. Clone or download SyscomScript
- 2. Download [syscomscript-(VersionName).vsix](VScodeExtension) below
+ 2. Download [syscomscript-(VersionName).vsix](https://github.com/TAICHI1129/SyscomScript/tree/main/VScodeExtension) below
  3. In VSCode: Ctrl+Shift+P → "Install from VSIX" → select the file
 
 ## License
